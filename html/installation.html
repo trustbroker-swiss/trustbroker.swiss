@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Docker Installation</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240531T074541Z</span>
+<span id="revnumber">version 1.6.0.20240605T142908Z</span>
 </div>
 </div>
 <div id="content">
@@ -587,21 +587,22 @@ chmod 555 /usr/local/bin/docker-compose</code></pre>
 <h2 id="_default_setup">Default Setup</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The demo setup should run out fo the box as follows:
+<p>The demo setup should run out of the box as follows:
 - Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/docker-compose.yml">docker-compose.yml</a>
-- Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/env-vault.conf">env-vault.conf</a></p>
+- Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/env-vault.conf">env-vault.conf</a>
+- Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/run.sh">run.sh</a></p>
 </div>
 <div class="paragraph">
-<p>Run the setup as follows on a Linux bash:</p>
+<p>Run the setup:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code>source env-vault.conf
-docker compose up</code></pre>
+<pre class="highlight"><code>bash run.sh</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Access the setup via the mocked demo relying parties at <a href="http://localhost:7070" class="bare">http://localhost:7070</a>.</p>
+<p>Access the setup via the mocked demo relying parties at <a href="http://localhost:7070" class="bare">http://localhost:7070</a>.
+You can use the browser&#8217;s development tools and the SAML-tracer plugin to observe the traffic.</p>
 </div>
 </div>
 </div>
@@ -635,10 +636,14 @@ docker compose up</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash"># Variant 1: Access token used to access GitOps repository using http bearer token (must be created on Git server)
+<pre class="highlight"><code class="language-bash" data-lang="bash"># Variant 0: Run directly with the read-only public repository from GitHub
+GIT_URL=https://github.com/trustbroker-swiss/xtb-gitops-demo.git
+#GIT_TOKEN=not-required-on-public-repo
+
+# Variant 1: Access token used to access GitOps repository using http bearer token (must be created on Git server)
 # Gitea &gt;&gt; User Avater &gt;&gt; Settings &gt;&gt; Applications &gt;&gt; Manage Access Tokens &gt;&gt; Generate Token
 # Pass by value or by reference ie.e $TRUSTBROKER_HOME/keys/git_token
-GIT_URL=http://git@gitea:3000/trustbroker-swiss/xtb-gitops-demo.git
+#GIT_URL=http://git@gitea:3000/trustbroker-swiss/xtb-gitops-demo.git
 #GIT_TOKEN=./keys/git_token
 
 # Variant 2: SSH key used to access GitOps repository using ssh protocol (see setup-ssh.sh on how to get it)
@@ -657,12 +662,13 @@ PKI_PASSPHRASE=changeit
 STATECACHE_PASS=secret
 
 # Development environment population
-export GIT_URL CONFIG_BRANCH TRUSTBROKER_HOME SPRING_PROFILES_ACTIVE
+export GIT_URL GIT_TOKEN SSH_KEY CONFIG_BRANCH TRUSTBROKER_HOME SPRING_PROFILES_ACTIVE
 export PKI_PASSPHRASE STATECACHE_PASS
 
 # Rootless docker-compose requires switching the run user of the container.
 [ -z "$UID" ] &amp;&amp; export UID=$(id -u)
-[ -z "$GID" ] &amp;&amp; export GID=$(id -g)</code></pre>
+[ -z "$GID" ] &amp;&amp; export GID=$(id -g)
+export UID GID</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -674,7 +680,6 @@ sessiondb and/or git repository server:</p>
 <pre class="highlight"><code class="language-yaml" data-lang="yaml"># vim: syntax=yaml textwidth=120 expandtab tabstop=2 softtabstop=2 shiftwidth=2 autoindent
 # Docker compose setting up a standalone XTB service on a local docker host.configs:
 # NOTE: Source the ENV defining the secret first or define them inline (SSH_KEY, PKI_PASSPHRASE, STATECACHE_PASS)
-version: '3.7'
 
 networks:
   trustbroker-network:
@@ -729,8 +734,8 @@ services:
       - "8091:8091"
     environment:
       - GIT_URL=${GIT_URL}
-      #- GIT_TOKEN=${GIT_TOKEN}
-      #- SSH_KEY=${SSH_KEY}
+      - GIT_TOKEN=${GIT_TOKEN}
+      - SSH_KEY=${SSH_KEY}
       - CONFIG_BRANCH=main
       - SPRING_PROFILES_ACTIVE=DEMO
       - PKI_PASSPHRASE=${PKI_PASSPHRASE}
@@ -755,8 +760,8 @@ services:
       - "7071:7071"
     environment:
       - GIT_URL=${GIT_URL}
-      #- GIT_TOKEN=${GIT_TOKEN}
-      #- SSH_KEY=${SSH_KEY}
+      - GIT_TOKEN=${GIT_TOKEN}
+      - SSH_KEY=${SSH_KEY}
       - CONFIG_BRANCH=main
       - SPRING_PROFILES_ACTIVE=DEMO
       - PKI_PASSPHRASE=${PKI_PASSPHRASE}
@@ -840,10 +845,12 @@ URL for the xtb-gitops-demo repository..</p>
 <p>Create a repository <code>xtb-gitops-demo</code>.</p>
 </li>
 <li>
-<p>Optional: For http access: User &gt;&gt; Settings &gt;&gt; Applications &gt;&gt;  Manage Access Tokens &gt;&gt; Generate Token
-The resulting access token can be set along the <code>GIT_URL</code> as <code>GIT_TOKEN</code> or mapped to <code>/etc/trustbroker/keys/git_token</code>.</p>
+<p>Optional: For http access: User &gt;&gt; Settings &gt;&gt; Applications &gt;&gt;  Manage Access Tokens &gt;&gt; Generate Token</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>The resulting access token can be set along the <code>GIT_URL</code> as <code>GIT_TOKEN</code> or mapped to <code>/etc/trustbroker/keys/git_token</code>.</p>
 </div>
 <div class="paragraph">
 <p>Note that access token or SSH key are only required, if the git repository is private (gitea default).
@@ -904,18 +911,17 @@ source env-vault.conf
 [ ! -n "$STATECACHE_PASS" ] &amp;&amp; echo "ERROR: STATECACHE_PASS undefined" &amp;&amp; exit 1
 [ ! -n "$PKI_PASSPHRASE" ] &amp;&amp; echo "ERROR: PKI_PASSPHRASE undefined" &amp;&amp; exit 1
 if [ -z "$SSH_KEY" -a -z "$GIT_TOKEN" -a ! -r ssh/id_rsa -a ! -r ssh/git_token ]; then
-	echo "ERROR: SSH_KEY or GIT_TOKEN should be defined depending on GIT_URL or mapped to /etc/trustbroker/keys"
-	exit 1
+	echo "INFO: Assuming public access to $GIT_URL"
+	echo "HINT: GIT_TOKEN should be defined for private access via ENV or mapped to /etc/trustbroker/keys/git_token"
+	echo "HINT: SSH_KEY should be defined for private access via ENV or mapped to /etc/trustbroker/keys/id_rsa"
 fi
 
 # run service mesh in foreground
-#docker-compose up
+docker compose up
 
-# run service mesh in background
-local docker_compose="docker-compose"
-[ -x "${docker_compose}" ] || docker_compose="docker compose"
-$docker_compose up -d
-docker logs -f trustbroker</code></pre>
+# run service mesh in background and follow trustbroker log
+#docker compose up -d
+#docker logs -f trustbroker</code></pre>
 </div>
 </div>
 </div>
@@ -923,8 +929,8 @@ docker logs -f trustbroker</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240531T074541Z<br>
-Last updated 2024-05-30 16:15:18 +0200
+Version 1.6.0.20240605T142908Z<br>
+Last updated 2024-06-04 09:08:25 +0200
 </div>
 </div>
 </body>

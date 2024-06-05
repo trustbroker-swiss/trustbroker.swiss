@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Configuration</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240531T074541Z</span>
+<span id="revnumber">version 1.6.0.20240605T142908Z</span>
 </div>
 </div>
 <div id="content">
@@ -515,6 +515,7 @@ trustbroker:
     traceIdHeader: X-Request-Id # use edge infrastructure injected HTTP header to correlate all logs belonging to a request
     sessionLifetimeSec: 1800 # 30min user login latency on CP/IDP
     ssoSessionLifetimeSec: 43200 # 12h without re-auth when SSO enabled=true and not SAML forceAuthn=true or OIDC prompt=login
+    ssoMinQoaLevel: -2 # we allow SSO for any QOA level sent by CP i.e. unspecified having order# -1 is good enough
     handleResponderErrors: false # Pass through CP/IDP SAML responder messages to CP/SP
     # Support a global signer and the option to read multiple certs from a single keystore (including p12) by picking by name
     signer:
@@ -583,9 +584,9 @@ trustbroker:
           password: ${trustbroker.config.signer.password}
           keyEntryId: ${trustbroker.config.signer.keyEntryId}
       samlEncrypt: false # encrypt SAML messages sent from XTB/SAML to XTB/OIDC (more SAMl attributes than OIDC claims
-      keySchedule: "* * 1 * * *" # key rotation daily at 1 o'clock (see spring CronExpression)
-      keyExpirationMinutes: 1440 # keys valid for 24 hours (requires clients to fetch keys at least once a day)
-      keyDeletionMinutes: 1680 # keys kep 4h longer in the database for debugging
+      keySchedule: "* * 1 * * *" # key rotation daily at 1 am (see spring CronExpression)
+      keyExpirationMinutes: 2880 # keys valid for 48 hours (requires clients to fetch keys at least once a day)
+      keyDeletionMinutes: 3000 # keys kept 2h longer in the database for debugging
       defaultQoa: "urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified" # fallback for acr_values claims
       # Globally customize /token and /userinfo output dropping technical claims (typ=JWT and iss=issuer we keep for now)
       addTokenClaims: # used on /token endpoint to whitelist OIDC technical claims
@@ -1097,7 +1098,7 @@ done</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240531T074541Z<br>
+Version 1.6.0.20240605T142908Z<br>
 Last updated 2024-05-15 17:40:04 +0200
 </div>
 </div>

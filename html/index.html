@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>trustbroker.swiss (XTB)</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240531T074541Z</span>
+<span id="revnumber">version 1.6.0.20240605T142908Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -502,8 +502,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
-<p>routing authentication requests between Relying Parties (RP, also known as Service Provider / SP) and Claims Providers
-(CP also known as IDentity Provider / IDP) allowing a user to select the home realm or computationally doing
+<p>routing authentication requests between relying parties (in short RP, also known as service provider / SP) and claims providers
+(CP also known as identity provider / IDP) allowing a user to select the home realm or computationally doing
 home realm discovery (HRD) via scripting</p>
 </li>
 <li>
@@ -554,7 +554,7 @@ authentication for backends)</p>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">User-Agent</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The client is usually a browser in case of front-channel controlled authentication or otherwise a OIDC adapter running either
-in the browser using JavaScript or in a backend</p></td>
+in the browser using JavaScript or in a backend.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Relying Party Service</p></td>
@@ -566,7 +566,7 @@ in the browser using JavaScript or in a backend</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Authentication Service</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the federation between RP and CP service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the federation between RP and CP service.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">OIDC Service</p></td>
@@ -576,12 +576,18 @@ To separate SAML and OIDC implementation sub-systems, the OIDC service is federa
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">HRD Controller</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the interaction with the user when selecting an CP form the HRD selection screen</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the interaction with the user when selecting a CP form the HRD selection screen.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Script Service</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Allows to hook groovy scripts to manipulate the federation data and flow. See processing model for supported hooks and the
 configuration section for a few examples.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SSO Service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Allows multiple RP&#8217;s to share a session on the XTB. The SSO mechanism is based on cookies and device tracking and can be
+overridden via SAML AuthnRequest (forceAuthn) and OIDC authorize request (prompt=login). Minimal LoA requirements should be
+applied using this service.</p></td>
 </tr>
 </tbody>
 </table>
@@ -857,21 +863,22 @@ chmod 555 /usr/local/bin/docker-compose</code></pre>
 <div class="sect2">
 <h3 id="_default_setup">Default Setup</h3>
 <div class="paragraph">
-<p>The demo setup should run out fo the box as follows:
+<p>The demo setup should run out of the box as follows:
 - Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/docker-compose.yml">docker-compose.yml</a>
-- Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/env-vault.conf">env-vault.conf</a></p>
+- Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/env-vault.conf">env-vault.conf</a>
+- Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/run.sh">run.sh</a></p>
 </div>
 <div class="paragraph">
-<p>Run the setup as follows on a Linux bash:</p>
+<p>Run the setup:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code>source env-vault.conf
-docker compose up</code></pre>
+<pre class="highlight"><code>bash run.sh</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Access the setup via the mocked demo relying parties at <a href="http://localhost:7070" class="bare">http://localhost:7070</a>.</p>
+<p>Access the setup via the mocked demo relying parties at <a href="http://localhost:7070" class="bare">http://localhost:7070</a>.
+You can use the browser&#8217;s development tools and the SAML-tracer plugin to observe the traffic.</p>
 </div>
 </div>
 <div class="sect2">
@@ -903,10 +910,14 @@ docker compose up</code></pre>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-bash" data-lang="bash"># Variant 1: Access token used to access GitOps repository using http bearer token (must be created on Git server)
+<pre class="highlight"><code class="language-bash" data-lang="bash"># Variant 0: Run directly with the read-only public repository from GitHub
+GIT_URL=https://github.com/trustbroker-swiss/xtb-gitops-demo.git
+#GIT_TOKEN=not-required-on-public-repo
+
+# Variant 1: Access token used to access GitOps repository using http bearer token (must be created on Git server)
 # Gitea &gt;&gt; User Avater &gt;&gt; Settings &gt;&gt; Applications &gt;&gt; Manage Access Tokens &gt;&gt; Generate Token
 # Pass by value or by reference ie.e $TRUSTBROKER_HOME/keys/git_token
-GIT_URL=http://git@gitea:3000/trustbroker-swiss/xtb-gitops-demo.git
+#GIT_URL=http://git@gitea:3000/trustbroker-swiss/xtb-gitops-demo.git
 #GIT_TOKEN=./keys/git_token
 
 # Variant 2: SSH key used to access GitOps repository using ssh protocol (see setup-ssh.sh on how to get it)
@@ -925,12 +936,13 @@ PKI_PASSPHRASE=changeit
 STATECACHE_PASS=secret
 
 # Development environment population
-export GIT_URL CONFIG_BRANCH TRUSTBROKER_HOME SPRING_PROFILES_ACTIVE
+export GIT_URL GIT_TOKEN SSH_KEY CONFIG_BRANCH TRUSTBROKER_HOME SPRING_PROFILES_ACTIVE
 export PKI_PASSPHRASE STATECACHE_PASS
 
 # Rootless docker-compose requires switching the run user of the container.
 [ -z "$UID" ] &amp;&amp; export UID=$(id -u)
-[ -z "$GID" ] &amp;&amp; export GID=$(id -g)</code></pre>
+[ -z "$GID" ] &amp;&amp; export GID=$(id -g)
+export UID GID</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -942,7 +954,6 @@ sessiondb and/or git repository server:</p>
 <pre class="highlight"><code class="language-yaml" data-lang="yaml"># vim: syntax=yaml textwidth=120 expandtab tabstop=2 softtabstop=2 shiftwidth=2 autoindent
 # Docker compose setting up a standalone XTB service on a local docker host.configs:
 # NOTE: Source the ENV defining the secret first or define them inline (SSH_KEY, PKI_PASSPHRASE, STATECACHE_PASS)
-version: '3.7'
 
 networks:
   trustbroker-network:
@@ -997,8 +1008,8 @@ services:
       - "8091:8091"
     environment:
       - GIT_URL=${GIT_URL}
-      #- GIT_TOKEN=${GIT_TOKEN}
-      #- SSH_KEY=${SSH_KEY}
+      - GIT_TOKEN=${GIT_TOKEN}
+      - SSH_KEY=${SSH_KEY}
       - CONFIG_BRANCH=main
       - SPRING_PROFILES_ACTIVE=DEMO
       - PKI_PASSPHRASE=${PKI_PASSPHRASE}
@@ -1023,8 +1034,8 @@ services:
       - "7071:7071"
     environment:
       - GIT_URL=${GIT_URL}
-      #- GIT_TOKEN=${GIT_TOKEN}
-      #- SSH_KEY=${SSH_KEY}
+      - GIT_TOKEN=${GIT_TOKEN}
+      - SSH_KEY=${SSH_KEY}
       - CONFIG_BRANCH=main
       - SPRING_PROFILES_ACTIVE=DEMO
       - PKI_PASSPHRASE=${PKI_PASSPHRASE}
@@ -1104,10 +1115,12 @@ URL for the xtb-gitops-demo repository..</p>
 <p>Create a repository <code>xtb-gitops-demo</code>.</p>
 </li>
 <li>
-<p>Optional: For http access: User &gt;&gt; Settings &gt;&gt; Applications &gt;&gt;  Manage Access Tokens &gt;&gt; Generate Token
-The resulting access token can be set along the <code>GIT_URL</code> as <code>GIT_TOKEN</code> or mapped to <code>/etc/trustbroker/keys/git_token</code>.</p>
+<p>Optional: For http access: User &gt;&gt; Settings &gt;&gt; Applications &gt;&gt;  Manage Access Tokens &gt;&gt; Generate Token</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>The resulting access token can be set along the <code>GIT_URL</code> as <code>GIT_TOKEN</code> or mapped to <code>/etc/trustbroker/keys/git_token</code>.</p>
 </div>
 <div class="paragraph">
 <p>Note that access token or SSH key are only required, if the git repository is private (gitea default).
@@ -1168,18 +1181,17 @@ source env-vault.conf
 [ ! -n "$STATECACHE_PASS" ] &amp;&amp; echo "ERROR: STATECACHE_PASS undefined" &amp;&amp; exit 1
 [ ! -n "$PKI_PASSPHRASE" ] &amp;&amp; echo "ERROR: PKI_PASSPHRASE undefined" &amp;&amp; exit 1
 if [ -z "$SSH_KEY" -a -z "$GIT_TOKEN" -a ! -r ssh/id_rsa -a ! -r ssh/git_token ]; then
-	echo "ERROR: SSH_KEY or GIT_TOKEN should be defined depending on GIT_URL or mapped to /etc/trustbroker/keys"
-	exit 1
+	echo "INFO: Assuming public access to $GIT_URL"
+	echo "HINT: GIT_TOKEN should be defined for private access via ENV or mapped to /etc/trustbroker/keys/git_token"
+	echo "HINT: SSH_KEY should be defined for private access via ENV or mapped to /etc/trustbroker/keys/id_rsa"
 fi
 
 # run service mesh in foreground
-#docker-compose up
+docker compose up
 
-# run service mesh in background
-local docker_compose="docker-compose"
-[ -x "${docker_compose}" ] || docker_compose="docker compose"
-$docker_compose up -d
-docker logs -f trustbroker</code></pre>
+# run service mesh in background and follow trustbroker log
+#docker compose up -d
+#docker logs -f trustbroker</code></pre>
 </div>
 </div>
 </div>
@@ -1256,6 +1268,7 @@ trustbroker:
     traceIdHeader: X-Request-Id # use edge infrastructure injected HTTP header to correlate all logs belonging to a request
     sessionLifetimeSec: 1800 # 30min user login latency on CP/IDP
     ssoSessionLifetimeSec: 43200 # 12h without re-auth when SSO enabled=true and not SAML forceAuthn=true or OIDC prompt=login
+    ssoMinQoaLevel: -2 # we allow SSO for any QOA level sent by CP i.e. unspecified having order# -1 is good enough
     handleResponderErrors: false # Pass through CP/IDP SAML responder messages to CP/SP
     # Support a global signer and the option to read multiple certs from a single keystore (including p12) by picking by name
     signer:
@@ -1324,9 +1337,9 @@ trustbroker:
           password: ${trustbroker.config.signer.password}
           keyEntryId: ${trustbroker.config.signer.keyEntryId}
       samlEncrypt: false # encrypt SAML messages sent from XTB/SAML to XTB/OIDC (more SAMl attributes than OIDC claims
-      keySchedule: "* * 1 * * *" # key rotation daily at 1 o'clock (see spring CronExpression)
-      keyExpirationMinutes: 1440 # keys valid for 24 hours (requires clients to fetch keys at least once a day)
-      keyDeletionMinutes: 1680 # keys kep 4h longer in the database for debugging
+      keySchedule: "* * 1 * * *" # key rotation daily at 1 am (see spring CronExpression)
+      keyExpirationMinutes: 2880 # keys valid for 48 hours (requires clients to fetch keys at least once a day)
+      keyDeletionMinutes: 3000 # keys kept 2h longer in the database for debugging
       defaultQoa: "urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified" # fallback for acr_values claims
       # Globally customize /token and /userinfo output dropping technical claims (typ=JWT and iss=issuer we keep for now)
       addTokenClaims: # used on /token endpoint to whitelist OIDC technical claims
@@ -1956,7 +1969,7 @@ contract properly.
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code class="language-java" data-lang="java">// Purpose: Show how OIC claim enrichment and structured claim assembly works.
+<pre class="highlight"><code class="language-java" data-lang="java">// Purpose: Show how OIDC claim enrichment and structured claim assembly works.
 // Note: Implements https://openid.net/specs/openid-connect-core-1_0.html#AddressClaim
 
 // some IDP provided attributes
@@ -4168,7 +4181,7 @@ Migration use case only. We prefer you package this with your client ao we can r
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240531T074541Z<br>
+Version 1.6.0.20240605T142908Z<br>
 Last updated 2024-05-15 17:40:04 +0200
 </div>
 </div>

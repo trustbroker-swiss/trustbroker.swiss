@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Architecture</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240531T074541Z</span>
+<span id="revnumber">version 1.6.0.20240605T142908Z</span>
 </div>
 </div>
 <div id="content">
@@ -450,8 +450,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
-<p>routing authentication requests between Relying Parties (RP, also known as Service Provider / SP) and Claims Providers
-(CP also known as IDentity Provider / IDP) allowing a user to select the home realm or computationally doing
+<p>routing authentication requests between relying parties (in short RP, also known as service provider / SP) and claims providers
+(CP also known as identity provider / IDP) allowing a user to select the home realm or computationally doing
 home realm discovery (HRD) via scripting</p>
 </li>
 <li>
@@ -502,7 +502,7 @@ authentication for backends)</p>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">User-Agent</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">The client is usually a browser in case of front-channel controlled authentication or otherwise a OIDC adapter running either
-in the browser using JavaScript or in a backend</p></td>
+in the browser using JavaScript or in a backend.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Relying Party Service</p></td>
@@ -514,7 +514,7 @@ in the browser using JavaScript or in a backend</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Authentication Service</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the federation between RP and CP service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the federation between RP and CP service.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">OIDC Service</p></td>
@@ -524,12 +524,18 @@ To separate SAML and OIDC implementation sub-systems, the OIDC service is federa
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">HRD Controller</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the interaction with the user when selecting an CP form the HRD selection screen</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the interaction with the user when selecting a CP form the HRD selection screen.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Script Service</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Allows to hook groovy scripts to manipulate the federation data and flow. See processing model for supported hooks and the
 configuration section for a few examples.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SSO Service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Allows multiple RP&#8217;s to share a session on the XTB. The SSO mechanism is based on cookies and device tracking and can be
+overridden via SAML AuthnRequest (forceAuthn) and OIDC authorize request (prompt=login). Minimal LoA requirements should be
+applied using this service.</p></td>
 </tr>
 </tbody>
 </table>
@@ -552,8 +558,8 @@ configuration section for a few examples.</p></td>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240531T074541Z<br>
-Last updated 2024-05-15 17:40:04 +0200
+Version 1.6.0.20240605T142908Z<br>
+Last updated 2024-06-04 09:08:25 +0200
 </div>
 </div>
 </body>

@@ -450,11 +450,23 @@ All configuration files maintained in a git branch, XTB is started with, are pul
 To speed up experimenting or engineering configurations, run the <code>reconfig.sh</code> script on the side.</p>
 </div>
 <div class="paragraph">
-<p>So the configuration workflow is as follows:
-- Run XTB with a <code>GIT_URL</code> pointing to your GitOps repository (<code>CONFIG_BRANCH=master</code> is default).
-- Engineer your configuration and push them (the usual git add, commit, push workflow applies).
-- Wait until the console shows the reconfiguration or speed it up using the <code>reconfig.sh</code> script mentioned at the end.
-- Test your changes.</p>
+<p>So the configuration workflow is as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Run XTB with a <code>GIT_URL</code> pointing to your GitOps repository (<code>CONFIG_BRANCH=master</code> is default).</p>
+</li>
+<li>
+<p>Engineer your configuration and push them (the usual git add, commit, push workflow applies).</p>
+</li>
+<li>
+<p>Wait until the console shows the reconfiguration or speed it up using the <code>reconfig.sh</code> script mentioned at the end.</p>
+</li>
+<li>
+<p>Test your changes.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -1037,18 +1049,40 @@ Check the scripting section for insights.</p>
 <p>XTB has a small frontend for various purposes, mainly HRD (see above) and error display.</p>
 </div>
 <div class="paragraph">
-<p>The following can be customized:
-- config: The global settings contain a few UI influencing settings (e.g. the site specific language cookie, if the browser
-language shall be overruled)
-- translations: Texts for languages <code>de</code>, <code>fr</code>, <code>en</code> and <code>it</code>.
-- images: The tile images used on the HRD screen and declared in the ClaimsProviderDefinition.xml (see above)
-- assets: The theme resources to provide a corporate identity (icons, style, logo)</p>
+<p>The following can be customized:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>config: The global settings contain a few UI influencing settings (e.g. the site specific language cookie, if the browser
+language shall be overruled)</p>
+</li>
+<li>
+<p>translations: Texts for languages <code>de</code>, <code>fr</code>, <code>en</code> and <code>it</code>.</p>
+</li>
+<li>
+<p>images: The tile images used on the HRD screen and declared in the ClaimsProviderDefinition.xml (see above)</p>
+</li>
+<li>
+<p>assets: The theme resources to provide a corporate identity (icons, style, logo)</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p>Text handling:
-- Text keys can be found in <code>trustbroker-frontend/src</code> (look for the ng translate items).
-- Texts are maintained in texts.json for convenience and can be exchanged as texts.csv for translation services.
-- The <code>text2json.py</code> script checks the maintained master file and generates the derived <code>de/fr/en/it.json</code> translations.</p>
+<p>Text handling:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Text keys can be found in <code>trustbroker-frontend/src</code> (look for the ng translate items).</p>
+</li>
+<li>
+<p>Texts are maintained in texts.json for convenience and can be exchanged as texts.csv for translation services.</p>
+</li>
+<li>
+<p>The <code>text2json.py</code> script checks the maintained master file and generates the derived <code>de/fr/en/it.json</code> translations.</p>
+</li>
+</ul>
 </div>
 <div class="sect2">
 <h3 id="_theme_customizing">Theme Customizing</h3>
@@ -1066,11 +1100,23 @@ error screen) fits your needs.</p>
 <p>On first time use the repository is cloned into the <code>configCache</code>.</p>
 </div>
 <div class="paragraph">
-<p>XTB from then on checks the GitOps repository for changes and if commits are detected:
-- git pull the changes in <code>configCache</code>
-- copy the selected stage profile into configuration/new
-- validate the configuration
-- if ok activate the configuration by swapping latest configuration into the previous one and the new one takes its place.</p>
+<p>XTB from then on checks the GitOps repository for changes and if commits are detected:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>git pull the changes in <code>configCache</code></p>
+</li>
+<li>
+<p>copy the selected stage profile into configuration/new</p>
+</li>
+<li>
+<p>validate the configuration</p>
+</li>
+<li>
+<p>if ok activate the configuration by swapping latest configuration into the previous one and the new one takes its place.</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>This allows to diff latest against previous to see what changed.
@@ -1099,7 +1145,7 @@ done</pre>
 <div id="footer">
 <div id="footer-text">
 Version 1.6.0.20240606T061939Z<br>
-Last updated 2024-05-15 17:40:04 +0200
+Last updated 2024-06-06 09:13:41 +0200
 </div>
 </div>
 </body>

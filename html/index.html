@@ -863,10 +863,20 @@ chmod 555 /usr/local/bin/docker-compose</code></pre>
 <div class="sect2">
 <h3 id="_default_setup">Default Setup</h3>
 <div class="paragraph">
-<p>The demo setup should run out of the box as follows:
-- Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/docker-compose.yml">docker-compose.yml</a>
-- Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/env-vault.conf">env-vault.conf</a>
-- Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/run.sh">run.sh</a></p>
+<p>The demo setup should run out of the box as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/docker-compose.yml">docker-compose.yml</a></p>
+</li>
+<li>
+<p>Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/env-vault.conf">env-vault.conf</a></p>
+</li>
+<li>
+<p>Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/run.sh">run.sh</a></p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>Run the setup:</p>
@@ -1210,11 +1220,23 @@ All configuration files maintained in a git branch, XTB is started with, are pul
 To speed up experimenting or engineering configurations, run the <code>reconfig.sh</code> script on the side.</p>
 </div>
 <div class="paragraph">
-<p>So the configuration workflow is as follows:
-- Run XTB with a <code>GIT_URL</code> pointing to your GitOps repository (<code>CONFIG_BRANCH=master</code> is default).
-- Engineer your configuration and push them (the usual git add, commit, push workflow applies).
-- Wait until the console shows the reconfiguration or speed it up using the <code>reconfig.sh</code> script mentioned at the end.
-- Test your changes.</p>
+<p>So the configuration workflow is as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Run XTB with a <code>GIT_URL</code> pointing to your GitOps repository (<code>CONFIG_BRANCH=master</code> is default).</p>
+</li>
+<li>
+<p>Engineer your configuration and push them (the usual git add, commit, push workflow applies).</p>
+</li>
+<li>
+<p>Wait until the console shows the reconfiguration or speed it up using the <code>reconfig.sh</code> script mentioned at the end.</p>
+</li>
+<li>
+<p>Test your changes.</p>
+</li>
+</ul>
 </div>
 <div class="sect2">
 <h3 id="_global_settings">Global Settings</h3>
@@ -1778,18 +1800,40 @@ Check the scripting section for insights.</p>
 <p>XTB has a small frontend for various purposes, mainly HRD (see above) and error display.</p>
 </div>
 <div class="paragraph">
-<p>The following can be customized:
-- config: The global settings contain a few UI influencing settings (e.g. the site specific language cookie, if the browser
-language shall be overruled)
-- translations: Texts for languages <code>de</code>, <code>fr</code>, <code>en</code> and <code>it</code>.
-- images: The tile images used on the HRD screen and declared in the ClaimsProviderDefinition.xml (see above)
-- assets: The theme resources to provide a corporate identity (icons, style, logo)</p>
+<p>The following can be customized:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>config: The global settings contain a few UI influencing settings (e.g. the site specific language cookie, if the browser
+language shall be overruled)</p>
+</li>
+<li>
+<p>translations: Texts for languages <code>de</code>, <code>fr</code>, <code>en</code> and <code>it</code>.</p>
+</li>
+<li>
+<p>images: The tile images used on the HRD screen and declared in the ClaimsProviderDefinition.xml (see above)</p>
+</li>
+<li>
+<p>assets: The theme resources to provide a corporate identity (icons, style, logo)</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p>Text handling:
-- Text keys can be found in <code>trustbroker-frontend/src</code> (look for the ng translate items).
-- Texts are maintained in texts.json for convenience and can be exchanged as texts.csv for translation services.
-- The <code>text2json.py</code> script checks the maintained master file and generates the derived <code>de/fr/en/it.json</code> translations.</p>
+<p>Text handling:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Text keys can be found in <code>trustbroker-frontend/src</code> (look for the ng translate items).</p>
+</li>
+<li>
+<p>Texts are maintained in texts.json for convenience and can be exchanged as texts.csv for translation services.</p>
+</li>
+<li>
+<p>The <code>text2json.py</code> script checks the maintained master file and generates the derived <code>de/fr/en/it.json</code> translations.</p>
+</li>
+</ul>
 </div>
 <div class="sect3">
 <h4 id="_theme_customizing">Theme Customizing</h4>
@@ -1805,11 +1849,23 @@ error screen) fits your needs.</p>
 <p>On first time use the repository is cloned into the <code>configCache</code>.</p>
 </div>
 <div class="paragraph">
-<p>XTB from then on checks the GitOps repository for changes and if commits are detected:
-- git pull the changes in <code>configCache</code>
-- copy the selected stage profile into configuration/new
-- validate the configuration
-- if ok activate the configuration by swapping latest configuration into the previous one and the new one takes its place.</p>
+<p>XTB from then on checks the GitOps repository for changes and if commits are detected:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>git pull the changes in <code>configCache</code></p>
+</li>
+<li>
+<p>copy the selected stage profile into configuration/new</p>
+</li>
+<li>
+<p>validate the configuration</p>
+</li>
+<li>
+<p>if ok activate the configuration by swapping latest configuration into the previous one and the new one takes its place.</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>This allows to diff latest against previous to see what changed.
@@ -1953,17 +2009,37 @@ with one of the requested QoA.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>There are the following members to get and set claims:
-- attributes: They come from the CPs and are sent to RPs with an OriginalIssuer=CP-IssuerID
-- userDetails: XTB has an <code>IdmService</code> abstraction. Claims from such user registries should use this to store claims.
-- properties: Groovy scripts computing derived claims should store them here so the <code>SetupRP</code>/<code>ProfileRP</code> configuration show the
-contract properly.
-- claims: These are the OIDC attributes used for OIDC token assembly</p>
+<p>There are the following members to get and set claims:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>attributes: They come from the CPs and are sent to RPs with an OriginalIssuer=CP-IssuerID</p>
+</li>
+<li>
+<p>userDetails: XTB has an <code>IdmService</code> abstraction. Claims from such user registries should use this to store claims.</p>
+</li>
+<li>
+<p>properties: Groovy scripts computing derived claims should store them here so the <code>SetupRP</code>/<code>ProfileRP</code> configuration show the
+contract properly.</p>
+</li>
+<li>
+<p>claims: These are the OIDC attributes used for OIDC token assembly</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p>The names correspond to the selection 'Definition' lists in the configuration and are associated as follows:
-- <code>CPResponse</code> holds the actual data based on the definition objects in the configuration
-- Definition are copies including the value list and are used to generate the SAML attribute or OIDC claim output</p>
+<p>The names correspond to the selection 'Definition' lists in the configuration and are associated as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>CPResponse</code> holds the actual data based on the definition objects in the configuration</p>
+</li>
+<li>
+<p>Definition are copies including the value list and are used to generate the SAML attribute or OIDC claim output</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>The debug script shown at the beginning will expose all this data on <code>TRACE</code> level.</p>
@@ -2110,7 +2186,7 @@ if (CPResponse.oidcScopes &amp;&amp; CPResponse.oidcScopes.contains("openid")) {
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>trustbroker-xmlconfig</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>swiss.trustbroker.xmlconfig</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">XML schema for the configuration and classes generated from those - the configuration model for external use.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Configuration XML schema generated from DTO classes representing the configuration model for external use.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>trustbroker-application</code></p></td>

@@ -568,17 +568,37 @@ with one of the requested QoA.</p>
 </ul>
 </div>
 <div class="paragraph">
-<p>There are the following members to get and set claims:
-- attributes: They come from the CPs and are sent to RPs with an OriginalIssuer=CP-IssuerID
-- userDetails: XTB has an <code>IdmService</code> abstraction. Claims from such user registries should use this to store claims.
-- properties: Groovy scripts computing derived claims should store them here so the <code>SetupRP</code>/<code>ProfileRP</code> configuration show the
-contract properly.
-- claims: These are the OIDC attributes used for OIDC token assembly</p>
+<p>There are the following members to get and set claims:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>attributes: They come from the CPs and are sent to RPs with an OriginalIssuer=CP-IssuerID</p>
+</li>
+<li>
+<p>userDetails: XTB has an <code>IdmService</code> abstraction. Claims from such user registries should use this to store claims.</p>
+</li>
+<li>
+<p>properties: Groovy scripts computing derived claims should store them here so the <code>SetupRP</code>/<code>ProfileRP</code> configuration show the
+contract properly.</p>
+</li>
+<li>
+<p>claims: These are the OIDC attributes used for OIDC token assembly</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
-<p>The names correspond to the selection 'Definition' lists in the configuration and are associated as follows:
-- <code>CPResponse</code> holds the actual data based on the definition objects in the configuration
-- Definition are copies including the value list and are used to generate the SAML attribute or OIDC claim output</p>
+<p>The names correspond to the selection 'Definition' lists in the configuration and are associated as follows:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>CPResponse</code> holds the actual data based on the definition objects in the configuration</p>
+</li>
+<li>
+<p>Definition are copies including the value list and are used to generate the SAML attribute or OIDC claim output</p>
+</li>
+</ul>
 </div>
 <div class="paragraph">
 <p>The debug script shown at the beginning will expose all this data on <code>TRACE</code> level.</p>
@@ -613,7 +633,7 @@ if (CPResponse.oidcScopes &amp;&amp; CPResponse.oidcScopes.contains("openid")) {
 <div id="footer">
 <div id="footer-text">
 Version 1.6.0.20240606T061939Z<br>
-Last updated 2024-05-15 17:40:04 +0200
+Last updated 2024-06-06 09:10:27 +0200
 </div>
 </div>
 </body>

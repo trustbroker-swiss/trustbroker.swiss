@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>trustbroker.swiss (XTB)</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240605T142908Z</span>
+<span id="revnumber">version 1.6.0.20240606T061939Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -804,7 +804,7 @@ Requirements:</p>
 <p>OIDC config: <a href="http://localhost:8090/.well-known/openid-configuration" class="bare">http://localhost:8090/.well-known/openid-configuration</a></p>
 </li>
 <li>
-<p>SAML config: <a href="http://localhost:8090/api/v1/meta" class="bare">http://localhost:8090/api/v1/meta</a></p>
+<p>SAML config: <a href="http://localhost:8090/api/v1/metadata" class="bare">http://localhost:8090/api/v1/metadata</a></p>
 </li>
 </ul>
 </div></div></td>
@@ -879,6 +879,10 @@ chmod 555 /usr/local/bin/docker-compose</code></pre>
 <div class="paragraph">
 <p>Access the setup via the mocked demo relying parties at <a href="http://localhost:7070" class="bare">http://localhost:7070</a>.
 You can use the browser&#8217;s development tools and the SAML-tracer plugin to observe the traffic.</p>
+</div>
+<div class="paragraph">
+<p>If the docker image pulling fails because of authorization issues, ask for access on the
+<a href="https://github.com/orgs/trustbroker-swiss/discussions/1">trustbroker.swiss discussion forum</a>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -4181,7 +4185,7 @@ Migration use case only. We prefer you package this with your client ao we can r
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240605T142908Z<br>
+Version 1.6.0.20240606T061939Z<br>
 Last updated 2024-05-15 17:40:04 +0200
 </div>
 </div>

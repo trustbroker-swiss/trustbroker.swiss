@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Docker Installation</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240606T061939Z</span>
+<span id="revnumber">version 1.6.0.20240618T135314Z</span>
 </div>
 </div>
 <div id="content">
@@ -484,7 +484,7 @@ Requirements:</p>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>mariadb</code> providing session and token storage.</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">mysql --protocol=tcp --host=localhost --port=3306 --user=root --password=secret</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Investigate storage: show databases; use BSS; show tables; desc TB_AUTH_SESSION_CACHE;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Investigate storage: show databases; use TBSS16; show tables; desc TB_AUTH_SESSION_CACHE;</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>gitea</code> providing a gitops repository storage to play around with (optional, you can use your repo server).</p></td>
@@ -710,7 +710,7 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_DATABASE=sessiondb
+      - MYSQL_DATABASE=TBSS16
       - MYSQL_ROOT_PASSWORD=${STATECACHE_PASS}
       - MYSQL_PASSWORD=${STATECACHE_PASS}
       - MYSQL_USER=trustbroker
@@ -758,6 +758,7 @@ services:
       - SPRING_FLYWAY_PASSWORD=${STATECACHE_PASS}
       - SPRING_DATASOURCE_USERNAME=trustbroker
       - SPRING_DATASOURCE_PASSWORD=${STATECACHE_PASS}
+      #- LOGGING_LEVEL_ROOT=DEBUG
     networks:
       - trustbroker-network
 
@@ -943,8 +944,8 @@ docker compose up
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240606T061939Z<br>
-Last updated 2024-06-06 08:53:21 +0200
+Version 1.6.0.20240618T135314Z<br>
+Last updated 2024-06-17 13:42:41 +0200
 </div>
 </div>
 </body>

@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Configuration</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240606T061939Z</span>
+<span id="revnumber">version 1.6.0.20240618T135314Z</span>
 </div>
 </div>
 <div id="content">
@@ -514,7 +514,7 @@ spring:
     url: jdbc:mariadb://mariadb:3306
     user: root
     password: ${STATECACHE_PASS}
-    schemas: BSS
+    schemas: TBSS16
     driver-class-name: org.mariadb.jdbc.Driver
     locations: [classpath:db/migration/mariadb]
     baselineOnMigrate: true # force upgrading XTB schema even though the database is not empty
@@ -596,7 +596,7 @@ trustbroker:
           password: ${trustbroker.config.signer.password}
           keyEntryId: ${trustbroker.config.signer.keyEntryId}
       samlEncrypt: false # encrypt SAML messages sent from XTB/SAML to XTB/OIDC (more SAMl attributes than OIDC claims
-      keySchedule: "* * 1 * * *" # key rotation daily at 1 am (see spring CronExpression)
+      keySchedule: "0 0 1 * * *" # key rotation daily at 1 am (see spring CronExpression)
       keyExpirationMinutes: 2880 # keys valid for 48 hours (requires clients to fetch keys at least once a day)
       keyDeletionMinutes: 3000 # keys kept 2h longer in the database for debugging
       defaultQoa: "urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified" # fallback for acr_values claims
@@ -1144,8 +1144,8 @@ done</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240606T061939Z<br>
-Last updated 2024-06-06 09:13:41 +0200
+Version 1.6.0.20240618T135314Z<br>
+Last updated 2024-06-06 09:22:09 +0200
 </div>
 </div>
 </body>

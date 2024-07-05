@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>API and Protocols</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240611T152337Z</span>
+<span id="revnumber">version 1.6.0.20240705T065351Z</span>
 </div>
 </div>
 <div id="content">
@@ -511,7 +511,7 @@ configuration information</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>/oauth2/token</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">OIDC</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">JSON web token retrieval endpoint defined by <a href="https://openid.net/specs/openid-connect-core-1_0.html#TokenEndpoint">OpenID Connect
-Token endpoint</a></p></td>
+Token endpoint</a>. Used to retrieve tokens using authorization codes or refresh_token.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>/oauth2/jwks</code></p></td>
@@ -522,7 +522,8 @@ See <a href="https://datatracker.ietf.org/doc/html/rfc7517">rfc7517</a> for deta
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>/oauth2/introspect</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">OIDC</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Allows to to validate posted access token retrieving it&#8217;s data payload</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Allows to to validate posted access token retrieving it&#8217;s data payload.
+See <a href="https://datatracker.ietf.org/doc/html/rfc7662">rfc7662</a> for details.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>/oauth2/revoke</code></p></td>
@@ -550,15 +551,17 @@ See <a href="https://openid.net/specs/openid-connect-core-1_0.html#UserInfo">Ope
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>/app/sso</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Web</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">SSO login status page for testing. Can be used to check and kill SSO sessions.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">SSO login status page for testing. Can be used to check and kill SSO own sessions.
+Limitations: OIDC session members are visible here too but only when SSO is used and terminating SSO session here does not
+invalidate OIDC tokens.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240611T152337Z<br>
-Last updated 2024-05-15 17:40:04 +0200
+Version 1.6.0.20240705T065351Z<br>
+Last updated 2024-06-25 16:48:04 +0200
 </div>
 </div>
 </body>

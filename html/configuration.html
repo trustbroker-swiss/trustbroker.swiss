@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Configuration</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240611T152337Z</span>
+<span id="revnumber">version 1.6.0.20240705T065351Z</span>
 </div>
 </div>
 <div id="content">
@@ -554,7 +554,7 @@ trustbroker:
       requireSignedAssertion: true # CP/IDP per default must sign assertion within response
       validateAuthnRequest: true # RP/SP per default must sign request
       validateXmlSchema: true # Peers must comply to SAML protocol schemas pre default
-      validateAcs: true # Incoming AssertionConsumerURL is validated against ACWhitelist
+      validateAcs: false # Incoming AssertionConsumerURL is validated against ACWhitelist
       validateRelayState: true # SAML RelayState is required and must match session
       validateAudience: true # SAML audience is matched against XTB issuer if found
       requireAudienceRestriction: false # Non-matching SAML audience results in an error
@@ -1144,7 +1144,7 @@ done</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240611T152337Z<br>
+Version 1.6.0.20240705T065351Z<br>
 Last updated 2024-06-06 09:22:09 +0200
 </div>
 </div>

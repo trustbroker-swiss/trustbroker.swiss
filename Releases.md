@@ -1,4 +1,4 @@
-# Releases of Trust Broker Swiss 
+# Releases of trustbroker.swiss 
 
 New releases will be distributed in these conditions: 
 

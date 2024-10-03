@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Docker Installation</h1>
 <div class="details">
-<span id="revnumber">version 1.6.0.20240819T100141Z</span>
+<span id="revnumber">version 1.7.0.20240930T144005Z</span>
 </div>
 </div>
 <div id="content">
@@ -592,13 +592,13 @@ chmod 555 /usr/local/bin/docker-compose</code></pre>
 <div class="ulist">
 <ul>
 <li>
-<p>Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/docker-compose.yml">docker-compose.yml</a></p>
+<p>Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/blob/main/trustbroker-install/docker/docker-compose.yml">docker-compose.yml</a></p>
 </li>
 <li>
-<p>Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/env-vault.conf">env-vault.conf</a></p>
+<p>Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/blob/main/trustbroker-install/env-vault.conf">env-vault.conf</a></p>
 </li>
 <li>
-<p>Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/trustbroker-install/docker/run.sh">run.sh</a></p>
+<p>Download <a href="https://github.com/trustbroker-swiss/trustbroker-swiss/blob/main/trustbroker-install/run.sh">run.sh</a></p>
 </li>
 </ul>
 </div>
@@ -758,7 +758,12 @@ services:
       - SPRING_FLYWAY_PASSWORD=${STATECACHE_PASS}
       - SPRING_DATASOURCE_USERNAME=trustbroker
       - SPRING_DATASOURCE_PASSWORD=${STATECACHE_PASS}
+      # Debug SSH startup in case of connectivity problem with external git repo
       #- LOGGING_LEVEL_ROOT=DEBUG
+      # When running behind an enterprise proxy inject a HTTPS or SSH proxy (HTTP not supported)
+      #- HTTPS_PROXY=http://proxy.company.com:1234
+      #- SSH_PROXY_HOST=proxy.company.com
+      #- SSH_PROXY_PORT=1234
     networks:
       - trustbroker-network
 
@@ -944,8 +949,8 @@ docker compose up
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.6.0.20240819T100141Z<br>
-Last updated 2024-08-08 16:44:14 +0200
+Version 1.7.0.20240930T144005Z<br>
+Last updated 2024-10-03 16:25:30 +0200
 </div>
 </div>
 </body>

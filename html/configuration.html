@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Configuration</h1>
 <div class="details">
-<span id="revnumber">version 1.7.0.20240930T144005Z</span>
+<span id="revnumber">version 1.8.0.20250218T151123Z</span>
 </div>
 </div>
 <div id="content">
@@ -529,6 +529,11 @@ trustbroker:
     ssoSessionLifetimeSec: 43200 # 12h without re-auth when SSO enabled=true and not SAML forceAuthn=true or OIDC prompt=login
     ssoMinQoaLevel: -2 # we allow SSO for any QOA level sent by CP i.e. unspecified having order# -1 is good enough
     handleResponderErrors: false # Pass through CP/IDP SAML responder messages to CP/SP
+    # Allow access to some halfway public APIs usually not exposed on internet (header injected by network perimeter)
+    network:
+      networkHeader: 'X-ClientNetwork'
+      internetNetworkName: INTERNET
+      intranetNetworkName: INTRANET
     # Support a global signer and the option to read multiple certs from a single keystore (including p12) by picking by name
     signer:
       signerCert: ${TRUSTBROKER_HOME}/configuration/latest/keystore/token-signer/keystore.pem
@@ -539,7 +544,7 @@ trustbroker:
     claimsMapping:
       syncSchedule: '0 */1 * * * *' # check for git changes every 1min
     stateCache:
-      reapSchedule: '30 * * * * *' # check every 30s for collectable sessions
+      reapSchedule: '30 * * * * *' # check every minute for collectable sessions (see spring CronExpression)
       reapMaxDelaySec: 25 # randomize actual execution start in multiple instance deployments (K8S replicas)
       targetMaxEntries: 104857 # may number of sessions before garbage collecting the oldest valid ones
       minSessionLifetimeSec: ${trustbroker.config.sessionLifetimeSec}
@@ -842,7 +847,6 @@ are used when processing the federation:</p>
 			&lt;!-- Supported subset of https://openid.net/specs/openid-connect-core-1_0.html#TokenRequest --&gt;
 			&lt;AuthorizationGrantTypes&gt;
 				&lt;GrantType&gt;authorization_code&lt;/GrantType&gt;
-				&lt;GrantType&gt;client_secret_post&lt;/GrantType&gt;
 				&lt;GrantType&gt;refresh_token&lt;/GrantType&gt;
 			&lt;/AuthorizationGrantTypes&gt;
 			&lt;!-- Supported subset of https://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication --&gt;
@@ -1144,8 +1148,8 @@ done</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.7.0.20240930T144005Z<br>
-Last updated 2024-08-08 16:44:14 +0200
+Version 1.8.0.20250218T151123Z<br>
+Last updated 2025-02-18 17:36:59 +0100
 </div>
 </div>
 </body>

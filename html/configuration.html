@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Configuration</h1>
 <div class="details">
-<span id="revnumber">version 1.8.0.20250218T172031Z</span>
+<span id="revnumber">version 1.9.0.20250415T132527Z</span>
 </div>
 </div>
 <div id="content">
@@ -575,6 +575,20 @@ trustbroker:
       doSignAssertions: true # RP/SP responses must contain assertion signed by XTB
       doSignSuccessResponse: true # RP/SP responses must be signed by XTB
       doSignFailureResponse: true # RP/SP responders messages must be signed too
+    # global Qoa model defining the order, order then optional in SetupRP/SetupCP
+    qoa:
+      defaultQoa: 'urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport'
+      strongestPossible: 'urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI'
+      mapping:
+        '[urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorUnregistered]': 100
+        '[urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport]': 200
+        '[urn:oasis:names:tc:SAML:2.0:ac:classes:NomadTelephony]': 300
+        '[urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwareTimeSyncToken]': 300
+        '[urn:oasis:names:tc:SAML:2.0:ac:classes:Kerberos]': 400
+        '[urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI]': 500
+        '[urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract]': 500
+        '[urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken]': 500
+        '[urn:oasis:names:tc:SAML:2.0:ac:classes:SmartcardPKI]': 600
     saml:
       consumerUrl: ${trustbroker.config.perimeterUrl}/api/v1/saml # SAML post protocol endpoint
       artifactResolution:
@@ -742,24 +756,24 @@ The incoming assertion attributes are declared to also document the expected inp
 <div class="content">
 <pre class="highlight"><code class="language-xml" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
 &lt;ClaimsProviderSetup&gt;
-    &lt;ClaimsParty id="urn:trustbroker.swiss:idp:SAML-MOCK-1" &gt;
-        &lt;SSOUrl&gt;http://localhost:7070/auth/saml2/idp/samples&lt;/SSOUrl&gt;
-        &lt;Certificates&gt;
-            &lt;SignerTruststore&gt;
-                &lt;CertPath&gt;token-signer/keystore.pem&lt;/CertPath&gt;
-                &lt;Password&gt;$PKI_PASSPHRASE&lt;/Password&gt;
-            &lt;/SignerTruststore&gt;
-        &lt;/Certificates&gt;
-        &lt;Saml&gt;
-            &lt;ArtifactBinding inboundMode="SUPPORTED" outboundMode="SUPPORTED"/&gt;
-        &lt;/Saml&gt;
-        &lt;!-- CP attributes to be propagated --&gt;
-        &lt;AttributesSelection&gt;
-            &lt;Definition name="EMail" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"/&gt;
-            &lt;Definition name="FirstName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"/&gt;
-            &lt;Definition name="FamilyName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"/&gt;
-        &lt;/AttributesSelection&gt;
-    &lt;/ClaimsParty&gt;
+	&lt;ClaimsParty id="urn:trustbroker.swiss:idp:SAML-MOCK-1"&gt;
+		&lt;SSOUrl&gt;http://localhost:7070/auth/saml2/idp/samples&lt;/SSOUrl&gt;
+		&lt;Certificates&gt;
+			&lt;SignerTruststore&gt;
+				&lt;CertPath&gt;token-signer/keystore.pem&lt;/CertPath&gt;
+				&lt;Password&gt;$PKI_PASSPHRASE&lt;/Password&gt;
+			&lt;/SignerTruststore&gt;
+		&lt;/Certificates&gt;
+		&lt;Saml&gt;
+			&lt;ArtifactBinding inboundMode="SUPPORTED" outboundMode="SUPPORTED"/&gt;
+		&lt;/Saml&gt;
+		&lt;!-- CP attributes to be propagated --&gt;
+		&lt;AttributesSelection&gt;
+			&lt;Definition name="EMail" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"/&gt;
+			&lt;Definition name="FirstName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"/&gt;
+			&lt;Definition name="FamilyName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"/&gt;
+		&lt;/AttributesSelection&gt;
+	&lt;/ClaimsParty&gt;
 &lt;/ClaimsProviderSetup&gt;</code></pre>
 </div>
 </div>
@@ -864,24 +878,24 @@ are used when processing the federation:</p>
 			&lt;!-- Claims see at https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims --&gt;
 			&lt;ClaimsSelection&gt;
 				&lt;Definition name="EMail" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-							oidcNames="email" multiValued="STRING" /&gt;
+							oidcNames="email" multiValued="STRING"/&gt;
 				&lt;Definition name="FirstName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"
-							oidcNames="given_name" /&gt;
+							oidcNames="given_name"/&gt;
 				&lt;Definition name="Name" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"
-							oidcNames="family_name" /&gt;
+							oidcNames="family_name"/&gt;
 				&lt;Definition name="dateOfBirth" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/dateofbirth"
-							oidcNames="birthdate" multiValued="STRING" oidcMapper="TIME_EPOCH" /&gt;
+							oidcNames="birthdate" multiValued="STRING" oidcMapper="TIME_EPOCH"/&gt;
 				&lt;Definition name="address" namespaceUri="address"
-							oidcNames="address" /&gt;
+							oidcNames="address"/&gt;
 				&lt;Definition name="displayName" namespaceUri="2.16.840.1.113730.3.1.241"
-							oidcNames="name" multiValued="LIST" /&gt;
+							oidcNames="name" multiValued="LIST"/&gt;
 				&lt;Definition name="displayName" namespaceUri="2.16.840.1.113730.3.1.241"
-							oidcNames="name" multiValued="LIST" /&gt;
+							oidcNames="name" multiValued="LIST"/&gt;
 			&lt;/ClaimsSelection&gt;
 		&lt;/Client&gt;
 	&lt;/Oidc&gt;
 	&lt;Saml&gt;
-		&lt;ArtifactBinding inboundMode="SUPPORTED" outboundMode="SUPPORTED" /&gt;
+		&lt;ArtifactBinding inboundMode="SUPPORTED" outboundMode="SUPPORTED"/&gt;
 		&lt;!-- XML security defaults according to https://www.w3.org/TR/xmlsec-algorithms/ --&gt;
 		&lt;Signature&gt;
 			&lt;CanonicalizationAlgorithm&gt;http://www.w3.org/2001/10/xml-exc-c14n#&lt;/CanonicalizationAlgorithm&gt;
@@ -890,12 +904,12 @@ are used when processing the federation:</p>
 		&lt;/Signature&gt;
 	&lt;/Saml&gt;
 	&lt;!-- SSO also is used in disabled mode so XTB knows where to send the LogoutResponse to --&gt;
-	&lt;SSO enabled="false" sloUrl="please-define-if-rp-does-saml-logouts" /&gt;
+	&lt;SSO enabled="false" sloUrl="please-define-if-rp-does-saml-logouts"/&gt;
 	&lt;!-- Processing: Accepted incoming original issuer attributes --&gt;
 	&lt;AttributesSelection&gt;
-		&lt;Definition name="EMail" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress" /&gt;
-		&lt;Definition name="FirstName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname" /&gt;
-		&lt;Definition name="FamilyName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname" /&gt;
+		&lt;Definition name="EMail" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"/&gt;
+		&lt;Definition name="FirstName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"/&gt;
+		&lt;Definition name="FamilyName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"/&gt;
 		&lt;Definition name="dateOfBirth" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/dateofbirth"/&gt;
 		&lt;Definition name="displayName" namespaceUri="2.16.840.1.113730.3.1.241"/&gt;
 		&lt;!-- CP is visible only in SAML OriginalIssuer in RP response. Make it visible as an OIDC claim. --&gt;
@@ -904,9 +918,9 @@ are used when processing the federation:</p>
 	&lt;!-- Processing: Attributes computed in groovy scripts. It's possible to use oidcNames declarations already on any selection definition. --&gt;
 	&lt;PropertiesSelection&gt;
 		&lt;!-- Computed birthdate can be picked exclusively (remove from AttributesSelection above, or in the groovy script. --&gt;
-		&lt;Definition name="displayName" namespaceUri="2.16.840.1.113730.3.1.241" oidcNames="name" multiValued="LIST" /&gt;
+		&lt;Definition name="displayName" namespaceUri="2.16.840.1.113730.3.1.241" oidcNames="name" multiValued="LIST"/&gt;
 		&lt;!-- ssoSessionId is an XTB specific claim that allows to identify the federation session source --&gt;
-		&lt;Definition name="ssoSessionId" namespaceUri="http://trustbroker.swiss/claims/ssoSessionId" oidcNames="ssoSessionId" /&gt;
+		&lt;Definition name="ssoSessionId" namespaceUri="http://trustbroker.swiss/claims/ssoSessionId" oidcNames="ssoSessionId"/&gt;
 	&lt;/PropertiesSelection&gt;
 	&lt;!-- Processing: All RP side hooks dumping provided request/response data --&gt;
 	&lt;Scripts&gt;
@@ -938,32 +952,142 @@ Broken configurations are ignored for resilience.</p>
 <pre class="highlight"><code class="language-xml" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
 &lt;!-- relying party setup showing the basics of non-SSO usage --&gt;
 &lt;RelyingPartySetup&gt;
-    &lt;RelyingParty id="urn:trustbroker.swiss:sp:DEMO-RP-1" base="ProfileRP_DemoDefaults.xml"&gt;
-        &lt;ACWhitelist&gt;
-            &lt;ACUrl&gt;http://localhost:7070/authn/consumer&lt;/ACUrl&gt;
-        &lt;/ACWhitelist&gt;
-        &lt;Saml&gt;
-            &lt;ProtocolEndpoints&gt;
-                &lt;MetadataUrl&gt;http://localhost:7070/saml/metadata&lt;/MetadataUrl&gt;
-                &lt;ArtifactResolutionUrl&gt;http://localhost:7070/authn/arp&lt;/ArtifactResolutionUrl&gt;
-                &lt;ArtifactResolutionIndex&gt;0&lt;/ArtifactResolutionIndex&gt;
-            &lt;/ProtocolEndpoints&gt;
-            &lt;ArtifactBinding inboundMode="SUPPORTED" outboundMode="SUPPORTED"/&gt;
-        &lt;/Saml&gt;
-        &lt;SSO enabled="false" sloUrl="http://localhost:7070/auth/saml/slo"/&gt;
-        &lt;ClaimsProviderMappings&gt;
-            &lt;ClaimsProvider id="urn:trustbroker.swiss:idp:SAML-MOCK-1" /&gt;
-            &lt;ClaimsProvider id="urn:trustbroker.swiss:idp:SAML-MOCK-2" /&gt;
-            &lt;ClaimsProvider id="urn:trustbroker.swiss:idp:SAML-MOCK-3" /&gt;
-            &lt;!-- invisible but addressable CP, remove the previous entry to make SAML-MOCK-3 invisible on the HRD screen --&gt;
-            &lt;ClaimsProvider id="urn:trustbroker.swiss:idp:SAML-MOCK-3" relyingPartyAlias="urn:trustbroker.swiss:sp:DEMO-RP-3"/&gt;
-        &lt;/ClaimsProviderMappings&gt;
-        &lt;Scripts&gt;
-            &lt;Script type="BeforeHrd"&gt;HrdAutoSelectClaimsProvider.groovy&lt;/Script&gt;
-            &lt;Script type="AfterIdm"&gt;ComputeDerivedAttributes.groovy&lt;/Script&gt;
-        &lt;/Scripts&gt;
-    &lt;/RelyingParty&gt;
+	&lt;RelyingParty id="urn:trustbroker.swiss:sp:DEMO-RP-1" base="ProfileRP_DemoDefaults.xml"&gt;
+		&lt;ACWhitelist&gt;
+			&lt;ACUrl&gt;http://localhost:7070/authn/consumer&lt;/ACUrl&gt;
+		&lt;/ACWhitelist&gt;
+		&lt;Saml&gt;
+			&lt;ProtocolEndpoints&gt;
+				&lt;MetadataUrl&gt;http://localhost:7070/saml/metadata&lt;/MetadataUrl&gt;
+				&lt;ArtifactResolutionUrl&gt;http://localhost:7070/authn/arp&lt;/ArtifactResolutionUrl&gt;
+				&lt;ArtifactResolutionIndex&gt;0&lt;/ArtifactResolutionIndex&gt;
+			&lt;/ProtocolEndpoints&gt;
+			&lt;ArtifactBinding inboundMode="SUPPORTED" outboundMode="SUPPORTED"/&gt;
+		&lt;/Saml&gt;
+		&lt;SSO enabled="false" sloUrl="http://localhost:7070/auth/saml/slo"/&gt;
+		&lt;ClaimsProviderMappings&gt;
+			&lt;ClaimsProvider id="urn:trustbroker.swiss:idp:SAML-MOCK-1"/&gt;
+			&lt;ClaimsProvider id="urn:trustbroker.swiss:idp:SAML-MOCK-2"/&gt;
+			&lt;ClaimsProvider id="urn:trustbroker.swiss:idp:SAML-MOCK-3"/&gt;
+			&lt;!-- invisible but addressable CP, remove the previous entry to make SAML-MOCK-3 invisible on the HRD screen --&gt;
+			&lt;ClaimsProvider id="urn:trustbroker.swiss:idp:SAML-MOCK-3" relyingPartyAlias="urn:trustbroker.swiss:sp:DEMO-RP-3"/&gt;
+		&lt;/ClaimsProviderMappings&gt;
+		&lt;Scripts&gt;
+			&lt;Script type="BeforeHrd"&gt;HrdAutoSelectClaimsProvider.groovy&lt;/Script&gt;
+			&lt;Script type="AfterIdm"&gt;ComputeDerivedAttributes.groovy&lt;/Script&gt;
+		&lt;/Scripts&gt;
+	&lt;/RelyingParty&gt;
 &lt;/RelyingPartySetup&gt;</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_qoa_setup">Qoa Setup</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>XTB can do Qoa (acr) checking and enforcement mapping authentication context classes on CP and RP side.</p>
+</div>
+<div class="paragraph">
+<p>The Qoa model is configured in 3 areas:
+- A global model can be defined in the trustbroker.config.qoa section so the SetupRP/SetupCP Qoa sections do not need to define
+the order number (specifying which ACClass is stronger than another).
+- SetupRP defines defaults an RP requires (assuming default comparison type exact). This list is used when the RP does not send
+any requirements or it&#8217;s used to validate incoming requirements.
+- SetupCP defines what the federated IdP supports and is used for outbound mapping (using the internal order numbers) and also
+to validate, what the CP returns.</p>
+</div>
+<div class="paragraph">
+<p>RP Qoa example (validating/mapping inbound acr value and mapping back outbound values):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;RelyingPartySetup&gt;
+	&lt;RelyingParty id="urn:trustbroker.swiss:sp:QOA-RP-2" base="ProfileRP_DemoDefaults.xml"&gt;
+		&lt;ACWhitelist&gt;
+			&lt;ACUrl&gt;http://localhost:7070/authn/consumer&lt;/ACUrl&gt;
+		&lt;/ACWhitelist&gt;
+		&lt;SSO enabled="false" sloUrl="http://localhost:7070/auth/saml/slo"/&gt;
+		&lt;ClaimsProviderMappings&gt;
+			&lt;ClaimsProvider id="urn:trustbroker.swiss:idp:SAML-MOCK-2"/&gt;
+		&lt;/ClaimsProviderMappings&gt;
+		&lt;Qoa enforce="true"&gt;
+			&lt;!-- Accepted Qoa names sent by RPs, order number is optional if trustbroker.config.qoa defines a global model --&gt;
+			&lt;ACClass order="099"&gt;qoa-099-custom&lt;/ACClass&gt;
+			&lt;ACClass order="100"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneFactorUnregistered&lt;/ACClass&gt;
+			&lt;ACClass order="200"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport&lt;/ACClass&gt;
+			&lt;ACClass order="300"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:NomadTelephony&lt;/ACClass&gt;
+			&lt;ACClass order="301"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwareTimeSyncToken&lt;/ACClass&gt;
+			&lt;ACClass order="400"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:Kerberos&lt;/ACClass&gt;
+			&lt;ACClass order="500"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:SoftwarePKI&lt;/ACClass&gt;
+			&lt;ACClass order="501"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract&lt;/ACClass&gt;
+			&lt;ACClass order="502"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken&lt;/ACClass&gt;
+			&lt;ACClass order="600"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:MobileOneSmartcardPKIFactorUnregistered&lt;/ACClass&gt;
+		&lt;/Qoa&gt;
+	&lt;/RelyingParty&gt;
+&lt;/RelyingPartySetup&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>CP Qoa example (mapping inbound acr values and validating/mapping outbound values):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="language-xml" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;ClaimsProviderSetup&gt;
+	&lt;ClaimsParty id="urn:trustbroker.swiss:idp:SAML-MOCK-2"&gt;
+		&lt;SSOUrl&gt;http://localhost:7070/auth/saml2/idp/samples&lt;/SSOUrl&gt;
+		&lt;Certificates&gt;
+			&lt;SignerTruststore&gt;
+				&lt;CertPath&gt;token-signer/keystore.pem&lt;/CertPath&gt;
+				&lt;Password&gt;$PKI_PASSPHRASE&lt;/Password&gt;
+			&lt;/SignerTruststore&gt;
+		&lt;/Certificates&gt;
+		&lt;SecurityPolicies
+				requireSignedResponse="true"
+				validateXmlSchema="true"
+		/&gt;
+		&lt;Saml&gt;
+			&lt;ArtifactBinding inboundMode="SUPPORTED" outboundMode="SUPPORTED"/&gt;
+		&lt;/Saml&gt;
+		&lt;!-- use another claim as NameID on CP side --&gt;
+		&lt;SubjectNameMappings preserve="false"&gt;
+			&lt;SubjectName
+					issuer="urn:trustbroker.swiss:idp:SAML-MOCK-2"
+					source="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
+					format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+			/&gt;
+		&lt;/SubjectNameMappings&gt;
+		&lt;!-- CP-side QoA supported mapped from RP-side context classes (100 and 600 not supported by CP) --&gt;
+		&lt;!-- SAML comparisonType=exact is default, minimum is used when RP does not send it,  --&gt;
+		&lt;Qoa enforce="true" comparison="minimum"&gt;
+			&lt;ACClass order="099"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport&lt;/ACClass&gt;
+			&lt;ACClass order="200"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport&lt;/ACClass&gt;
+			&lt;ACClass order="300"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract&lt;/ACClass&gt;
+			&lt;ACClass order="301"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract&lt;/ACClass&gt;
+			&lt;ACClass order="400"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract&lt;/ACClass&gt;
+			&lt;ACClass order="500"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract&lt;/ACClass&gt;
+			&lt;ACClass order="501"&gt;urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract&lt;/ACClass&gt;
+		&lt;/Qoa&gt;
+		&lt;!-- CP attributes to be propagated --&gt;
+		&lt;AttributesSelection&gt;
+			&lt;Definition name="EMail" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"/&gt;
+			&lt;Definition name="FirstName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname"/&gt;
+			&lt;Definition name="FamilyName" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname"/&gt;
+			&lt;!-- https://schemas.xmlsoap.org/ws/2005/05/identity/Identity_Selector_Interoperability_Profile_V1.5.pdf --&gt;
+			&lt;Definition name="dateOfBirth" namespaceUri="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/dateofbirth"/&gt;
+			&lt;!-- https://docs.ldap.com/specs/rfc2798.txt (source 1) --&gt;
+			&lt;Definition name="displayName" namespaceUri="2.16.840.1.113730.3.1.241"/&gt;
+			&lt;!-- IDP sending HRD name for some users --&gt;
+			&lt;Definition name="HomeRealmHint" namespaceUri="HomeRealmHint"/&gt;
+		&lt;/AttributesSelection&gt;
+		&lt;Scripts&gt;
+			&lt;!-- Incoming from CP we can already validate and compute some derived claims --&gt;
+			&lt;Script type="BeforeIdm"&gt;ComputeDerivedAttributes.groovy&lt;/Script&gt;
+		&lt;/Scripts&gt;
+	&lt;/ClaimsParty&gt;
+&lt;/ClaimsProviderSetup&gt;</code></pre>
 </div>
 </div>
 </div>
@@ -1148,8 +1272,8 @@ done</pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.8.0.20250218T172031Z<br>
-Last updated 2025-02-18 18:44:51 +0100
+Version 1.9.0.20250415T132527Z<br>
+Last updated 2025-05-06 11:40:46 +0200
 </div>
 </div>
 </body>

@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Scripting</h1>
 <div class="details">
-<span id="revnumber">version 1.9.0.20250415T132527Z</span>
+<span id="revnumber">version 1.10.0.20250707T160051Z</span>
 </div>
 </div>
 <div id="content">
@@ -451,8 +451,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <p>The scripting engine is <a href="https://groovy-lang.org/index.html">Groovy</a> based on the underlying Java libraries.</p>
 </div>
 <div class="paragraph">
-<p>This allows a wide range of manipulations so make sure that the code you are injecting via scripts meets security
-requirements, specifically:</p>
+<p>This allows a wide range of manipulations so make sure that the code you are injecting via scripts meets security requirements, specifically:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -473,8 +472,8 @@ requirements, specifically:</p>
 <h2 id="_log">LOG</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The LOG object allows access to the logging facility using the SLF4J API. You can use error, warn, info, debug and trace methods
-with parameter binding:</p>
+<p>The LOG object allows access to the logging facility using the SLF4J API.
+You can use error, warn, info, debug and trace methods with parameter binding:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -498,8 +497,7 @@ LOG.trace("DEMO RPRequest: {}", RPRequest)</code></pre>
 <p>Deciding on home realm discovery (HRD) routing based on the HTTP or SAML/OIDC protocol (you can drop or retain CPs).</p>
 </li>
 <li>
-<p>Handling authentication context class mappings towards claims providers (you can validate and map RPRequest.contextClasses on
-the way to the CP).</p>
+<p>Handling authentication context class mappings towards claims providers (you can validate and map RPRequest.contextClasses on the way to the CP).</p>
 </li>
 </ul>
 </div>
@@ -545,8 +543,7 @@ if (RPRequest.getClaimsProviders().size() &gt; 1) {
 <h2 id="_cprepsonse">CPRepsonse</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The <code>CPRepsonse</code> object is bound to handle claims provider responses and manipulate the relying party responses during the phases
-documented in the Architecture.</p>
+<p>The <code>CPRepsonse</code> object is bound to handle claims provider responses and manipulate the relying party responses during the phases documented in the Architecture.</p>
 </div>
 <div class="paragraph">
 <p>These members are of interest for mapping between CP and RP:</p>
@@ -554,16 +551,14 @@ documented in the Architecture.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>nameId: The subject name identifier passed as the authentication result from the CP, also represented internally as
-the NameId 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier' attribute.</p>
+<p>nameId: The subject name identifier passed as the authentication result from the CP, also represented internally as the NameId 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier' attribute.</p>
 </li>
 <li>
 <p>nameIdFormat: Some relying parties care about the SAML name identifier format to assert a certain authentication quality.
 This allows to overrule what the CP has decided in case of integration problems.</p>
 </li>
 <li>
-<p>contextClasses: Like on the <code>RPRequest</code> (requested authentication context class references, in short QoA) the CP should respond
-with one of the requested QoA.</p>
+<p>contextClasses: Like on the <code>RPRequest</code> (requested authentication context class references, in short QoA) the CP should respond with one of the requested QoA.</p>
 </li>
 </ul>
 </div>
@@ -576,11 +571,11 @@ with one of the requested QoA.</p>
 <p>attributes: They come from the CPs and are sent to RPs with an OriginalIssuer=CP-IssuerID</p>
 </li>
 <li>
-<p>userDetails: XTB has an <code>IdmQueryService</code> abstraction. Claims from such user registries should use this to store claims.</p>
+<p>userDetails: XTB has an <code>IdmQueryService</code> abstraction.
+Claims from such user registries should use this to store claims.</p>
 </li>
 <li>
-<p>properties: Groovy scripts computing derived claims should store them here so the <code>SetupRP</code>/<code>ProfileRP</code> configuration show the
-contract properly.</p>
+<p>properties: Groovy scripts computing derived claims should store them here so the <code>SetupRP</code>/<code>ProfileRP</code> configuration show the contract properly.</p>
 </li>
 <li>
 <p>claims: These are the OIDC attributes used for OIDC token assembly</p>
@@ -604,7 +599,8 @@ contract properly.</p>
 <p>The debug script shown at the beginning will expose all this data on <code>TRACE</code> level.</p>
 </div>
 <div class="paragraph">
-<p>Please be careful what you use. If not mentioned in this section, you might produce some unwanted results.</p>
+<p>Please be careful what you use.
+If not mentioned in this section, you might produce some unwanted results.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -632,8 +628,8 @@ if (CPResponse.oidcScopes &amp;&amp; CPResponse.oidcScopes.contains("openid")) {
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.9.0.20250415T132527Z<br>
-Last updated 2025-05-06 11:40:46 +0200
+Version 1.10.0.20250707T160051Z<br>
+Last updated 2025-07-07 14:35:28 +0200
 </div>
 </div>
 </body>

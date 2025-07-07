@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>trustbroker.swiss (XTB)</h1>
 <div class="details">
-<span id="revnumber">version 1.9.0.20250415T132527Z</span>
+<span id="revnumber">version 1.10.0.20250707T160051Z</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -503,16 +503,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
-<p>routing authentication requests between relying parties (in short RP, also known as service provider / SP) and claims providers
-(CP also known as identity provider / IDP) allowing a user to select the home realm or computationally doing
-home realm discovery (HRD) via scripting</p>
+<p>routing authentication requests between relying parties (in short RP, also known as service provider / SP) and claims providers (CP also known as identity provider / IDP) allowing a user to select the home realm or computationally doing home realm discovery (HRD) via scripting</p>
 </li>
 <li>
 <p>mapping claims/attributes between CP and RP (like authentication context classes, SAML attributes and OIDC claims)</p>
 </li>
 <li>
-<p>backing logins with a single-sign-on session store to prevent logins for participating RPs when Quality of Authentication
-(QoA) is sufficient provided by the same CP</p>
+<p>backing logins with a single-sign-on session store to prevent logins for participating RPs when Quality of Authentication (QoA) is sufficient provided by the same CP</p>
 </li>
 <li>
 <p>auditing login events as a central party</p>
@@ -528,12 +525,10 @@ home realm discovery (HRD) via scripting</p>
 <div class="ulist">
 <ul>
 <li>
-<p>SAML 2.0 on RP and CP side (SAML POST and redirect binding, artifact binding having higher integration effort and more
-complex operational impact can be used too)</p>
+<p>SAML 2.0 on RP and CP side (SAML POST and redirect binding, artifact binding having higher integration effort and more complex operational impact can be used too)</p>
 </li>
 <li>
-<p>OIDC 1.0 on RP side focussing on the best practice sub-set (authorization code flow with PKCE for frontend and with client
-authentication for backends)</p>
+<p>OIDC 1.0 on RP side focussing on the best practice sub-set (authorization code flow with PKCE for frontend and with client authentication for backends)</p>
 </li>
 </ul>
 </div>
@@ -571,9 +566,13 @@ in the browser using JavaScript or in a backend.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">OIDC Service</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the OIDC authorization code flow based on the
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles RP-initiated OIDC authorization code flow based on the
 <a href="https://docs.spring.io/spring-authorization-server/reference/overview.html#feature-list">Spring Authorization Server</a>
 To separate SAML and OIDC implementation sub-systems, the OIDC service is federated via SAML.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Authorization Code Flow Service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles OIDC authorization code flow towards OIDC CPs.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">HRD Controller</p></td>
@@ -599,7 +598,7 @@ applied using this service.</p></td>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="sequence-diagram.svg" alt="sequence diagram" width="1635" height="1591">
+<img src="sequence-diagram.svg" alt="sequence diagram" width="1857" height="1942">
 </div>
 <div class="title">Figure 1. Sequence diagram: Federation processing</div>
 </div>
@@ -610,8 +609,7 @@ applied using this service.</p></td>
 <h2 id="_api_and_protocols">API and Protocols</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>XTB provides various endpoints for SAML and OIDC federation handling and has a small single page application for the parts that
-require user interaction.</p>
+<p>XTB provides various endpoints for SAML and OIDC federation handling and has a small single page application for the parts that require user interaction.</p>
 </div>
 <div class="paragraph">
 <p>These features are provided based on:</p>
@@ -964,8 +962,7 @@ export UID GID</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Example docker compose depending on the vault (see ${VAR} references) that you might want to tweak towards using external
-sessiondb and/or git repository server:</p>
+<p>Example docker compose depending on the vault (see ${VAR} references) that you might want to tweak towards using external sessiondb and/or git repository server:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1011,13 +1008,32 @@ services:
     networks:
       - trustbroker-network
 
+  ldap:
+    container_name: ldap
+    image: bitnami/openldap
+    ports:
+      - '1389:1389'
+      - '1636:1636'
+    environment:
+      #- BITNAMI_DEBUG=true
+      - LDAP_ROOT=dc=trustbroker,dc=swiss
+      - LDAP_ADMIN_USERNAME=admin
+      - LDAP_ADMIN_PASSWORD=secret
+      - LDAP_CUSTOM_SCHEMA_DIR=/schema_init
+      - LDAP_CUSTOM_LDIF_DIR=/ldif_init
+    volumes:
+      - ./ldap_init/schema:/schema_init:ro
+      - ./ldap_init/ldif:/ldif_init:ro
+      #- openldap_data:/bitnami/openldap
+
   trustbroker:
     container_name: trustbroker
     image: ghcr.io/trustbroker-swiss/trustbroker-application:latest
     user: "${UID}:${GID}"
     depends_on:
-      - mariadb
       - gitea
+      - mariadb
+      - ldap
     volumes:
       - ./ssh:/etc/trustbroker/keys:ro
       - /etc/localtime:/etc/localtime:ro
@@ -1042,6 +1058,8 @@ services:
       #- HTTPS_PROXY=http://proxy.company.com:1234
       #- SSH_PROXY_HOST=proxy.company.com
       #- SSH_PROXY_PORT=1234
+      # When running on HTTP relax cookie polices
+      - TRUSTBROKER_CONFIG_SECUREBROWSERHEADERS=false
     networks:
       - trustbroker-network
 
@@ -1113,8 +1131,7 @@ cat ${SSH_KEY_FILE}.pub</code></pre>
 <div class="sect2">
 <h3 id="_setup_gitea_server">Setup Gitea Server</h3>
 <div class="paragraph">
-<p>For trials, you can use the Gitea server as shown in the docker-compose setup, you need to switch from the github to the gitea
-URL for the xtb-gitops-demo repository..</p>
+<p>For trials, you can use the Gitea server as shown in the docker-compose setup, you need to switch from the github to the gitea URL for the xtb-gitops-demo repository..</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1133,13 +1150,13 @@ URL for the xtb-gitops-demo repository..</p>
 <p>Register user <code>trustbroker-swiss</code> and login.</p>
 </li>
 <li>
-<p>Add content of <code>ssh/id_rsa.pub</code> (and/or your own) to: User &gt;&gt; Settings &gt;&gt; SSH/PGP Keys &gt;&gt;  Manage SSH Keys &gt;&gt; Add Key</p>
+<p>Add content of <code>ssh/id_rsa.pub</code> (and/or your own) to: User &gt;&gt; Settings &gt;&gt; SSH/PGP Keys &gt;&gt; Manage SSH Keys &gt;&gt; Add Key</p>
 </li>
 <li>
 <p>Create a repository <code>xtb-gitops-demo</code>.</p>
 </li>
 <li>
-<p>Optional: For http access: User &gt;&gt; Settings &gt;&gt; Applications &gt;&gt;  Manage Access Tokens &gt;&gt; Generate Token</p>
+<p>Optional: For http access: User &gt;&gt; Settings &gt;&gt; Applications &gt;&gt; Manage Access Tokens &gt;&gt; Generate Token</p>
 </li>
 </ul>
 </div>
@@ -1251,8 +1268,7 @@ To speed up experimenting or engineering configurations, run the <code>reconfig.
 <div class="sect2">
 <h3 id="_global_settings">Global Settings</h3>
 <div class="paragraph">
-<p>XTB is a spring-boot microservice running with a builtin application.yml for defaults and a spring.profiles.active=DEMO
-activated application.yml from the GitOps repository overriding or completing these defaults.</p>
+<p>XTB is a spring-boot microservice running with a builtin application.yml for defaults and a spring.profiles.active=DEMO activated application.yml from the GitOps repository overriding or completing these defaults.</p>
 </div>
 <div class="paragraph">
 <p>The following annotated demo file shows insights:</p>
@@ -1293,7 +1309,7 @@ spring:
     password: ${STATECACHE_PASS}
     schemas: TBSS16
     driver-class-name: org.mariadb.jdbc.Driver
-    locations: [classpath:db/migration/mariadb]
+    locations: [ classpath:db/migration/mariadb ]
     baselineOnMigrate: true # force upgrading XTB schema even though the database is not empty
 
 trustbroker:
@@ -1454,11 +1470,12 @@ logging:
 <div class="sect2">
 <h3 id="_claims_provider_definitions">Claims Provider Definitions</h3>
 <div class="paragraph">
-<p>This configuration defines the identification and visual aspects of CPs shown on the HRD screen. HRD (home realm discovery)
-provides the means for a user to select from multiple CPs one, where an onboarding was done and an account is available.</p>
+<p>This configuration defines the identification and visual aspects of CPs shown on the HRD screen.
+HRD (home realm discovery) provides the means for a user to select from multiple CPs one, where an onboarding was done and an account is available.</p>
 </div>
 <div class="paragraph">
-<p>The HRD screen is not shown, when only one CPs is federated. The definition is necessary anyway.
+<p>The HRD screen is not shown, when only one CPs is federated.
+The definition is necessary anyway.
 The DEMO setup uses the SAML mock in 2 instances.</p>
 </div>
 <div class="listingblock">
@@ -1491,8 +1508,8 @@ The DEMO setup uses the SAML mock in 2 instances.</p>
 <div class="sect2">
 <h3 id="_single_sign_on_groups">Single Sign On Groups</h3>
 <div class="paragraph">
-<p>SSO groups provide a means to join multiple relying parties into a single login group during a period defined by the group. A
-login with the same CP is then not required anymore.</p>
+<p>SSO groups provide a means to join multiple relying parties into a single login group during a period defined by the group.
+A login with the same CP is then not required anymore.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -1552,16 +1569,14 @@ The incoming assertion attributes are declared to also document the expected inp
 <div class="sect2">
 <h3 id="_relying_party_profile">Relying Party Profile</h3>
 <div class="paragraph">
-<p>Profiles provide a mechanism to declare a template for multiple relying parties using the same protocols, claims definitions
-and mapping procedures.</p>
+<p>Profiles provide a mechanism to declare a template for multiple relying parties using the same protocols, claims definitions and mapping procedures.</p>
 </div>
 <div class="paragraph">
 <p>The content of a ReylingParty declared in here needs to be correctly ordered according to the configuration schema (see
 <code>ReylingParty.java</code> or the XSD files in the docker image).</p>
 </div>
 <div class="paragraph">
-<p>The order reflects the processing model (see architecture) so reading a ProfileRP or SetupRP top down reflects which elements
-are used when processing the federation:</p>
+<p>The order reflects the processing model (see architecture) so reading a ProfileRP or SetupRP top down reflects which elements are used when processing the federation:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -1584,7 +1599,7 @@ are used when processing the federation:</p>
 <p>Invoke IDM service applying list of configured IDMQuery (not shown in OSS yet)</p>
 </li>
 <li>
-<p>On response to RP apply UserDetailsSelection (IDM source), PropertiesSelection (computed by scripts)  and ClaimsSelection (towards OIDC) filtering</p>
+<p>On response to RP apply UserDetailsSelection (IDM source), PropertiesSelection (computed by scripts) and ClaimsSelection (towards OIDC) filtering</p>
 </li>
 <li>
 <p>Scripts affect the overall processing and are last</p>
@@ -1706,8 +1721,7 @@ are used when processing the federation:</p>
 <div class="sect2">
 <h3 id="_relying_party_setup">Relying Party Setup</h3>
 <div class="paragraph">
-<p>The <code>SetupRP.xml</code> defines the federation with the SAML service provider or OIDC application client based on the <code>ProfileRP.xml</code> it
-refers to.</p>
+<p>The <code>SetupRP.xml</code> defines the federation with the SAML service provider or OIDC application client based on the <code>ProfileRP.xml</code> it refers to.</p>
 </div>
 <div class="paragraph">
 <p>The profile is optional but recommended to reduce bad copy&amp;paste habits and maintain site policies within few profiles.
@@ -1755,12 +1769,10 @@ Broken configurations are ignored for resilience.</p>
 </div>
 <div class="paragraph">
 <p>The Qoa model is configured in 3 areas:
-- A global model can be defined in the trustbroker.config.qoa section so the SetupRP/SetupCP Qoa sections do not need to define
-the order number (specifying which ACClass is stronger than another).
-- SetupRP defines defaults an RP requires (assuming default comparison type exact). This list is used when the RP does not send
-any requirements or it&#8217;s used to validate incoming requirements.
-- SetupCP defines what the federated IdP supports and is used for outbound mapping (using the internal order numbers) and also
-to validate, what the CP returns.</p>
+- A global model can be defined in the trustbroker.config.qoa section so the SetupRP/SetupCP Qoa sections do not need to define the order number (specifying which ACClass is stronger than another).
+- SetupRP defines defaults an RP requires (assuming default comparison type exact).
+This list is used when the RP does not send any requirements or it&#8217;s used to validate incoming requirements.
+- SetupCP defines what the federated IdP supports and is used for outbound mapping (using the internal order numbers) and also to validate, what the CP returns.</p>
 </div>
 <div class="paragraph">
 <p>RP Qoa example (validating/mapping inbound acr value and mapping back outbound values):</p>
@@ -1881,6 +1893,9 @@ to validate, what the CP returns.</p>
 Key rotation settings need to be tuned in this case in the global configuration (see above).
 It&#8217;s recommended to fix the client instead.</p>
 </div>
+<div class="paragraph">
+<p>XTB fetches and caches OIDC CP metadata on start-up and updates it periodically or when a key is referenced that is not cached.</p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_saml">SAML</h4>
@@ -1890,12 +1905,11 @@ It&#8217;s recommended to fix the client instead.</p>
 <div class="ulist">
 <ul>
 <li>
-<p><code>keystore.pem</code>: OpenSSL PEM formatted certificate along with the private RSA key, protected by the PKI_PASSPHRASE from the
-runtime environment (K8S secret, CO vault)</p>
+<p><code>keystore.pem</code>: OpenSSL PEM formatted certificate along with the private RSA key, protected by the PKI_PASSPHRASE from the runtime environment (K8S secret, CO vault)</p>
 </li>
 <li>
-<p><code>truststore.pem</code>: The same but no private key in their. This one instead might contain multiple trusted certificates (e.g. when
-the peer is in the process of replacing its signer)</p>
+<p><code>truststore.pem</code>: The same but no private key in their.
+This one instead might contain multiple trusted certificates (e.g. when the peer is in the process of replacing its signer)</p>
 </li>
 <li>
 <p><code>keystore.p12</code>: PKCS12 keystores with or without private keys.</p>
@@ -1941,8 +1955,7 @@ Check the scripting section for insights.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>config: The global settings contain a few UI influencing settings (e.g. the site specific language cookie, if the browser
-language shall be overruled)</p>
+<p>config: The global settings contain a few UI influencing settings (e.g. the site specific language cookie, if the browser language shall be overruled)</p>
 </li>
 <li>
 <p>translations: Texts for languages <code>de</code>, <code>fr</code>, <code>en</code> and <code>it</code>.</p>
@@ -1974,8 +1987,7 @@ language shall be overruled)</p>
 <div class="sect3">
 <h4 id="_theme_customizing">Theme Customizing</h4>
 <div class="paragraph">
-<p>See <code>xtb-gitops-demo</code> for assets and check the CSS to see if the styling of the interactive parts of XTB (usually HRD and
-error screen) fits your needs.</p>
+<p>See <code>xtb-gitops-demo</code> for assets and check the CSS to see if the styling of the interactive parts of XTB (usually HRD and error screen) fits your needs.</p>
 </div>
 </div>
 </div>
@@ -2037,8 +2049,7 @@ done</pre>
 <p>The scripting engine is <a href="https://groovy-lang.org/index.html">Groovy</a> based on the underlying Java libraries.</p>
 </div>
 <div class="paragraph">
-<p>This allows a wide range of manipulations so make sure that the code you are injecting via scripts meets security
-requirements, specifically:</p>
+<p>This allows a wide range of manipulations so make sure that the code you are injecting via scripts meets security requirements, specifically:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -2056,8 +2067,8 @@ requirements, specifically:</p>
 <div class="sect2">
 <h3 id="_log">LOG</h3>
 <div class="paragraph">
-<p>The LOG object allows access to the logging facility using the SLF4J API. You can use error, warn, info, debug and trace methods
-with parameter binding:</p>
+<p>The LOG object allows access to the logging facility using the SLF4J API.
+You can use error, warn, info, debug and trace methods with parameter binding:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2079,8 +2090,7 @@ LOG.trace("DEMO RPRequest: {}", RPRequest)</code></pre>
 <p>Deciding on home realm discovery (HRD) routing based on the HTTP or SAML/OIDC protocol (you can drop or retain CPs).</p>
 </li>
 <li>
-<p>Handling authentication context class mappings towards claims providers (you can validate and map RPRequest.contextClasses on
-the way to the CP).</p>
+<p>Handling authentication context class mappings towards claims providers (you can validate and map RPRequest.contextClasses on the way to the CP).</p>
 </li>
 </ul>
 </div>
@@ -2122,8 +2132,7 @@ if (RPRequest.getClaimsProviders().size() &gt; 1) {
 <div class="sect2">
 <h3 id="_cprepsonse">CPRepsonse</h3>
 <div class="paragraph">
-<p>The <code>CPRepsonse</code> object is bound to handle claims provider responses and manipulate the relying party responses during the phases
-documented in the Architecture.</p>
+<p>The <code>CPRepsonse</code> object is bound to handle claims provider responses and manipulate the relying party responses during the phases documented in the Architecture.</p>
 </div>
 <div class="paragraph">
 <p>These members are of interest for mapping between CP and RP:</p>
@@ -2131,16 +2140,14 @@ documented in the Architecture.</p>
 <div class="ulist">
 <ul>
 <li>
-<p>nameId: The subject name identifier passed as the authentication result from the CP, also represented internally as
-the NameId 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier' attribute.</p>
+<p>nameId: The subject name identifier passed as the authentication result from the CP, also represented internally as the NameId 'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier' attribute.</p>
 </li>
 <li>
 <p>nameIdFormat: Some relying parties care about the SAML name identifier format to assert a certain authentication quality.
 This allows to overrule what the CP has decided in case of integration problems.</p>
 </li>
 <li>
-<p>contextClasses: Like on the <code>RPRequest</code> (requested authentication context class references, in short QoA) the CP should respond
-with one of the requested QoA.</p>
+<p>contextClasses: Like on the <code>RPRequest</code> (requested authentication context class references, in short QoA) the CP should respond with one of the requested QoA.</p>
 </li>
 </ul>
 </div>
@@ -2153,11 +2160,11 @@ with one of the requested QoA.</p>
 <p>attributes: They come from the CPs and are sent to RPs with an OriginalIssuer=CP-IssuerID</p>
 </li>
 <li>
-<p>userDetails: XTB has an <code>IdmQueryService</code> abstraction. Claims from such user registries should use this to store claims.</p>
+<p>userDetails: XTB has an <code>IdmQueryService</code> abstraction.
+Claims from such user registries should use this to store claims.</p>
 </li>
 <li>
-<p>properties: Groovy scripts computing derived claims should store them here so the <code>SetupRP</code>/<code>ProfileRP</code> configuration show the
-contract properly.</p>
+<p>properties: Groovy scripts computing derived claims should store them here so the <code>SetupRP</code>/<code>ProfileRP</code> configuration show the contract properly.</p>
 </li>
 <li>
 <p>claims: These are the OIDC attributes used for OIDC token assembly</p>
@@ -2181,7 +2188,8 @@ contract properly.</p>
 <p>The debug script shown at the beginning will expose all this data on <code>TRACE</code> level.</p>
 </div>
 <div class="paragraph">
-<p>Please be careful what you use. If not mentioned in this section, you might produce some unwanted results.</p>
+<p>Please be careful what you use.
+If not mentioned in this section, you might produce some unwanted results.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2211,7 +2219,8 @@ if (CPResponse.oidcScopes &amp;&amp; CPResponse.oidcScopes.contains("openid")) {
 <h2 id="_plugin_apis">Plugin APIs</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>XTB provides various API hooks for implementing certain features. They are defined in the <code>trustbroker-api</code> module.</p>
+<p>XTB provides various API hooks for implementing certain features.
+They are defined in the <code>trustbroker-api</code> module.</p>
 </div>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
@@ -2338,6 +2347,11 @@ if (CPResponse.oidcScopes &amp;&amp; CPResponse.oidcScopes.contains("openid")) {
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>trustbroker-samlmock</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>swiss.trustbroker.samlmock</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Mock for testing SAML exchanges based on recorded or hand-crafted messages.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>trustbroker-oidcmock</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>swiss.trustbroker.oidcmock</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Mock for testing OICD interaction.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>trustbroker-install</code></p></td>
@@ -2542,8 +2556,8 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:ca-certificates-bundle</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">MIT,MPL-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.opensource.org/licenses/MIT,http://opensource.org/licenses/MPL-2.0" class="bare">http://www.opensource.org/licenses/MIT,http://opensource.org/licenses/MPL-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MIT</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.opensource.org/licenses/MIT" class="bare">http://www.opensource.org/licenses/MIT</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:ca-certificates-bundle:20241121-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:ca-certificates-bundle</p></td>
@@ -2572,9 +2586,9 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:libcrypto3:3.3.2-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:libcrypto3:3.3.3-r0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:libcrypto3</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.3.2-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.3.3-r0</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:libmd</p></td>
@@ -2590,9 +2604,9 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:libssl3:3.3.2-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:libssl3:3.3.3-r0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:libssl3</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.3.2-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.3.3-r0</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:libx11</p></td>
@@ -2668,21 +2682,21 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:musl</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">MIT</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.opensource.org/licenses/MIT" class="bare">http://www.opensource.org/licenses/MIT</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:musl:1.2.5-r0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:musl:1.2.5-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:musl</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.2.5-r0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.2.5-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:musl-utils</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">BSD-2-Clause,MIT</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://opensource.org/licenses/BSD-2-Clause,http://www.opensource.org/licenses/MIT" class="bare">http://opensource.org/licenses/BSD-2-Clause,http://www.opensource.org/licenses/MIT</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:musl-utils:1.2.5-r0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:musl-utils:1.2.5-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:musl-utils</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.2.5-r0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.2.5-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:scanelf</p></td>
@@ -2705,11 +2719,11 @@ Migration use case only. We prefer you package this with your client ao we can r
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:tzdata</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Public Domain</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://creativecommons.org/licenses/publicdomain/" class="bare">http://creativecommons.org/licenses/publicdomain/</a></p></td>
+<td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:tzdata:2024b-r0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:tzdata:2025b-r0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:tzdata</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2024b-r0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2025b-r0</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zlib</p></td>
@@ -2722,156 +2736,156 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jdk</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GPL-2.0-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jdk:17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jdk:17.0.15-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:zulu17-ca-jdk</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.15-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jdk-headless</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GPL-2.0-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jdk-headless:17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jdk-headless:17.0.15-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:zulu17-ca-jdk-headless</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.15-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jre</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GPL-2.0-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jre:17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jre:17.0.15-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:zulu17-ca-jre</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.15-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jre-headless</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GPL-2.0-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jre-headless:17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-ca-jre-headless:17.0.15-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:zulu17-ca-jre-headless</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.15-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jdk</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GPL-2.0-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jdk:17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jdk:17.0.15-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:zulu17-jdk</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.15-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jdk-headless</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GPL-2.0-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jdk-headless:17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jdk-headless:17.0.15-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:zulu17-jdk-headless</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.15-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jre</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GPL-2.0-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jre:17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jre:17.0.15-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:zulu17-jre</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.15-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jre-headless</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">GPL-2.0-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jre-headless:17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.20:zulu17-jre-headless:17.0.15-r1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">alpine://3.20:zulu17-jre-headless</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.14-r1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">17.0.15-r1</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">ch.qos.logback:logback-classic</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">EPL-1.0,LGPL-2.1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.eclipse.org/legal/epl-v10.html,http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html" class="bare">http://www.eclipse.org/legal/epl-v10.html,http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">ch.qos.logback:logback-classic:1.5.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ch.qos.logback:logback-classic:1.5.18</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://ch.qos.logback:logback-classic</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.5.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.5.18</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">ch.qos.logback:logback-core</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">EPL-1.0,LGPL-2.1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.eclipse.org/legal/epl-v10.html,http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html" class="bare">http://www.eclipse.org/legal/epl-v10.html,http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">ch.qos.logback:logback-core:1.5.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">ch.qos.logback:logback-core:1.5.18</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://ch.qos.logback:logback-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.5.12</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.5.18</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.core:jackson-annotations</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.core:jackson-annotations:2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.core:jackson-annotations:2.18.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.fasterxml.jackson.core:jackson-annotations</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.core:jackson-core</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.core:jackson-core:2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.core:jackson-core:2.18.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.fasterxml.jackson.core:jackson-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.core:jackson-databind</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.core:jackson-databind:2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.core:jackson-databind:2.18.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.fasterxml.jackson.core:jackson-databind</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.dataformat:jackson-dataformat-toml</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.18.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.fasterxml.jackson.dataformat:jackson-dataformat-toml</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.datatype:jackson-datatype-jdk8</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.18.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.fasterxml.jackson.datatype:jackson-datatype-jdk8</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.datatype:jackson-datatype-jsr310</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.fasterxml.jackson.datatype:jackson-datatype-jsr310</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.module:jackson-module-parameter-names</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.module:jackson-module-parameter-names:2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml.jackson.module:jackson-module-parameter-names:2.18.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.fasterxml.jackson.module:jackson-module-parameter-names</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.18.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.fasterxml:classmate</p></td>
@@ -2932,9 +2946,9 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.google.errorprone:error_prone_annotations:2.28.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">com.google.errorprone:error_prone_annotations:2.23.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.google.errorprone:error_prone_annotations</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.28.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.23.0</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.google.guava:failureaccess</p></td>
@@ -2950,9 +2964,9 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.google.guava:guava:33.3.1-jre</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">com.google.guava:guava:33.0.0-jre</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.google.guava:guava</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">33.3.1-jre</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">33.0.0-jre</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.google.guava:listenablefuture</p></td>
@@ -2962,15 +2976,6 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.google.guava:listenablefuture</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">9999.0-empty-to-avoid-conflict-with-guava</p></td>
-</tr>
-<tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.google.j2objc:j2objc-annotations</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">com.google.j2objc:j2objc-annotations:3.0.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">gav://com.google.j2objc:j2objc-annotations</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.0.0</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">com.googlecode.javaewah:JavaEWAH</p></td>
@@ -3040,9 +3045,9 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">commons-codec:commons-codec:1.17.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">commons-codec:commons-codec:1.17.2</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://commons-codec:commons-codec</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.17.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.17.2</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">commons-collections:commons-collections</p></td>
@@ -3094,36 +3099,36 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-commons:1.14.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-commons:1.14.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.micrometer:micrometer-commons</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.14.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.14.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-core</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-core:1.14.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-core:1.14.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.micrometer:micrometer-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.14.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.14.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-jakarta9</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-jakarta9:1.14.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-jakarta9:1.14.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.micrometer:micrometer-jakarta9</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.14.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.14.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-observation</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-observation:1.14.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-observation:1.14.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.micrometer:micrometer-observation</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.14.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.14.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.micrometer:micrometer-registry-prometheus</p></td>
@@ -3139,54 +3144,54 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-config:1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-config:1.3.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.prometheus:prometheus-metrics-config</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-core</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-core:1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-core:1.3.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.prometheus:prometheus-metrics-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-exposition-formats</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-exposition-formats:1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-exposition-formats:1.3.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.prometheus:prometheus-metrics-exposition-formats</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-exposition-textformats</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-exposition-textformats:1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-exposition-textformats:1.3.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.prometheus:prometheus-metrics-exposition-textformats</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-model</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-model:1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-model:1.3.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.prometheus:prometheus-metrics-model</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-tracer-common</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-tracer-common:1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">io.prometheus:prometheus-metrics-tracer-common:1.3.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://io.prometheus:prometheus-metrics-tracer-common</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.5</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.3.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">io.smallrye:jandex</p></td>
@@ -3226,8 +3231,8 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">jakarta.mail:jakarta.mail-api</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">BSD-3-Clause,Classpath-exception-2.0,EPL-2.0,GPL-2.0-only</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://opensource.org/licenses/BSD-3-Clause,https://spdx.org/licenses/EPL-2.0,http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html" class="bare">http://opensource.org/licenses/BSD-3-Clause,https://spdx.org/licenses/EPL-2.0,http://www.gnu.org/licenses/old-licenses/gpl-2.0-standalone.html</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://opensource.org/licenses/BSD-3-Clause" class="bare">http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">jakarta.mail:jakarta.mail-api:2.1.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://jakarta.mail:jakarta.mail-api</p></td>
@@ -3293,7 +3298,7 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">generic</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">jrt-fs.jar</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:530063857a49840d7c511b7abc03c73f9605fb44344584731be6c099972d18c9/jrt-fs.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:87b4ce9c606b1f901606387bc02269cfed47e595428c31e542d1b3baae76450d/jrt-fs.jar</p></td>
 <td class="tableblock halign-left valign-top"></td>
 </tr>
 <tr>
@@ -3316,8 +3321,8 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">net.java.dev.jna:jna</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,LGPL-2.1-or-later</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html" class="bare">http://licenses.nuget.org/Apache-2.0,http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">net.java.dev.jna:jna:5.13.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://net.java.dev.jna:jna</p></td>
@@ -3325,8 +3330,8 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">net.java.dev.jna:jna-platform</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,LGPL-2.1-or-later</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html" class="bare">http://licenses.nuget.org/Apache-2.0,http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">net.java.dev.jna:jna-platform:5.13.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://net.java.dev.jna:jna-platform</p></td>
@@ -3406,8 +3411,8 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.groovy:groovy</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.groovy:groovy:4.0.23</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.groovy:groovy</p></td>
@@ -3427,36 +3432,36 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.client5:httpclient5:5.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.client5:httpclient5:5.4.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.httpcomponents.client5:httpclient5</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">5.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.4.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.client5:httpclient5-cache</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.client5:httpclient5-cache:5.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.client5:httpclient5-cache:5.4.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.httpcomponents.client5:httpclient5-cache</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">5.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.4.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.core5:httpcore5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.core5:httpcore5:5.3.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.core5:httpcore5:5.3.4</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.httpcomponents.core5:httpcore5</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">5.3.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.3.4</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.core5:httpcore5-h2</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.core5:httpcore5-h2:5.3.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.httpcomponents.core5:httpcore5-h2:5.3.4</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.httpcomponents.core5:httpcore5-h2</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">5.3.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">5.3.4</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.logging.log4j:log4j-api</p></td>
@@ -3481,9 +3486,9 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.santuario:xmlsec:3.0.3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.santuario:xmlsec:3.0.4</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.santuario:xmlsec</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.0.3</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.0.4</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.sshd:sshd-osgi</p></td>
@@ -3508,36 +3513,36 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat.embed:tomcat-embed-core:10.1.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat.embed:tomcat-embed-core:10.1.40</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.tomcat.embed:tomcat-embed-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">10.1.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10.1.40</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat.embed:tomcat-embed-el</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat.embed:tomcat-embed-el:10.1.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat.embed:tomcat-embed-el:10.1.40</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.tomcat.embed:tomcat-embed-el</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">10.1.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10.1.40</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat.embed:tomcat-embed-websocket</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat.embed:tomcat-embed-websocket:10.1.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat.embed:tomcat-embed-websocket:10.1.40</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.tomcat.embed:tomcat-embed-websocket</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">10.1.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10.1.40</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat:tomcat-annotations-api</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat:tomcat-annotations-api:10.1.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.tomcat:tomcat-annotations-api:10.1.40</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.apache.tomcat:tomcat-annotations-api</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">10.1.34</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">10.1.40</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.apache.velocity:velocity-engine-core</p></td>
@@ -3571,9 +3576,9 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">EPL-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="https://spdx.org/licenses/EPL-2.0" class="bare">https://spdx.org/licenses/EPL-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.aspectj:aspectjweaver:1.9.22.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.aspectj:aspectjweaver:1.9.24</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.aspectj:aspectjweaver</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.9.22.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.9.24</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.bouncycastle:bcpkix-jdk18on</p></td>
@@ -3607,14 +3612,14 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">MIT</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.opensource.org/licenses/MIT" class="bare">http://www.opensource.org/licenses/MIT</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.checkerframework:checker-qual:3.43.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.checkerframework:checker-qual:3.41.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.checkerframework:checker-qual</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.43.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.41.0</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.cryptacular:cryptacular</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,LGPL-3.0-only</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://www.gnu.org/licenses/lgpl-3.0-standalone.html" class="bare">http://licenses.nuget.org/Apache-2.0,http://www.gnu.org/licenses/lgpl-3.0-standalone.html</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.cryptacular:cryptacular:1.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.cryptacular:cryptacular</p></td>
@@ -3766,8 +3771,8 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.hdrhistogram:HdrHistogram</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">BSD-2-Clause,CC0-1.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://opensource.org/licenses/BSD-2-Clause,http://creativecommons.org/publicdomain/zero/1.0/" class="bare">http://opensource.org/licenses/BSD-2-Clause,http://creativecommons.org/publicdomain/zero/1.0/</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">CC0-1.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://creativecommons.org/publicdomain/zero/1.0/" class="bare">http://creativecommons.org/publicdomain/zero/1.0/</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.hdrhistogram:HdrHistogram:2.2.2</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.hdrhistogram:HdrHistogram</p></td>
@@ -3784,12 +3789,12 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.hibernate.orm:hibernate-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">LGPL-2.1-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">LGPL-2.1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.hibernate.orm:hibernate-core:6.6.4.Final</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.hibernate.orm:hibernate-core:6.6.13.Final</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.hibernate.orm:hibernate-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.6.4.Final</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.6.13.Final</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.jasypt:jasypt</p></td>
@@ -3811,8 +3816,8 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.jvnet.staxex:stax-ex</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">EPL-1.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.eclipse.org/legal/epl-v10.html" class="bare">http://www.eclipse.org/legal/epl-v10.html</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://opensource.org/licenses/BSD-3-Clause" class="bare">http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.jvnet.staxex:stax-ex:2.1.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.jvnet.staxex:stax-ex</p></td>
@@ -3829,7 +3834,7 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.mariadb.jdbc:mariadb-java-client</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">LGPL-2.1-only</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">LGPL-2.1</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html" class="bare">http://www.gnu.org/licenses/old-licenses/lgpl-2.1-standalone.html</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.mariadb.jdbc:mariadb-java-client:3.4.1</p></td>
@@ -3991,156 +3996,156 @@ Migration use case only. We prefer you package this with your client ao we can r
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.slf4j:jcl-over-slf4j</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,MIT</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://www.opensource.org/licenses/MIT" class="bare">http://licenses.nuget.org/Apache-2.0,http://www.opensource.org/licenses/MIT</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.slf4j:jcl-over-slf4j:2.0.16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.slf4j:jcl-over-slf4j:2.0.17</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.slf4j:jcl-over-slf4j</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.0.16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.0.17</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.slf4j:jul-to-slf4j</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">MIT</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.opensource.org/licenses/MIT" class="bare">http://www.opensource.org/licenses/MIT</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.slf4j:jul-to-slf4j:2.0.16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.slf4j:jul-to-slf4j:2.0.17</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.slf4j:jul-to-slf4j</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.0.16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.0.17</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.slf4j:slf4j-api</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">MIT</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.opensource.org/licenses/MIT" class="bare">http://www.opensource.org/licenses/MIT</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.slf4j:slf4j-api:2.0.16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.slf4j:slf4j-api:2.0.17</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.slf4j:slf4j-api</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">2.0.16</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">2.0.17</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-actuator</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-actuator:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-actuator:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-actuator</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-actuator-autoconfigure</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-actuator-autoconfigure:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-actuator-autoconfigure:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-actuator-autoconfigure</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-autoconfigure</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-autoconfigure:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-autoconfigure:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-autoconfigure</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-actuator</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-actuator:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-actuator:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter-actuator</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-data-jpa</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-data-jpa:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-data-jpa:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter-data-jpa</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-jdbc</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-jdbc:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-jdbc:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter-jdbc</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-json</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-json:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-json:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter-json</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-logging</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-logging:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-logging:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter-logging</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-security</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-security:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-security:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter-security</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-tomcat</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-tomcat:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-tomcat:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter-tomcat</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-web</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-web:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-web:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter-web</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-web-services</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-web-services:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.boot:spring-boot-starter-web-services:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.boot:spring-boot-starter-web-services</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.cloud:spring-cloud-commons</p></td>
@@ -4179,256 +4184,247 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">4.2.0</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.cloud:spring-cloud-starter-bootstrap</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.cloud:spring-cloud-starter-bootstrap:4.2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.cloud:spring-cloud-starter-bootstrap</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">4.2.0</p></td>
-</tr>
-<tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.data:spring-data-commons</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.data:spring-data-commons:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.data:spring-data-commons:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.data:spring-data-commons</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.data:spring-data-jpa</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.data:spring-data-jpa:3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.data:spring-data-jpa:3.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.data:spring-data-jpa</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">3.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-config</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-config:6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-config:6.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.security:spring-security-config</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-core</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-core:6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-core:6.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.security:spring-security-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-crypto</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-crypto:6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-crypto:6.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.security:spring-security-crypto</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-authorization-server</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-authorization-server:1.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-authorization-server:1.4.3</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.security:spring-security-oauth2-authorization-server</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.4.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.4.3</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-core</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-core:6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-core:6.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.security:spring-security-oauth2-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-jose</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-jose:6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-jose:6.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.security:spring-security-oauth2-jose</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-resource-server</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-resource-server:6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-oauth2-resource-server:6.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.security:spring-security-oauth2-resource-server</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-saml2-service-provider</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-saml2-service-provider:6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-saml2-service-provider:6.4.4</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.security:spring-security-saml2-service-provider</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.4</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-web</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-web:6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.security:spring-security-web:6.4.5</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.security:spring-security-web</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.2</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.4.5</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.ws:spring-ws-core</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.ws:spring-ws-core:4.0.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.ws:spring-ws-core:4.0.13</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.ws:spring-ws-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">4.0.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.0.13</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.ws:spring-ws-security</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.ws:spring-ws-security:4.0.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.ws:spring-ws-security:4.0.13</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.ws:spring-ws-security</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">4.0.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.0.13</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.ws:spring-xml</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.ws:spring-xml:4.0.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework.ws:spring-xml:4.0.13</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework.ws:spring-xml</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">4.0.11</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">4.0.13</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-aop</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-aop:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-aop:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-aop</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-aspects</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-aspects:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-aspects:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-aspects</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-beans</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-beans:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-beans:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-beans</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-context:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-context:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-context</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-core:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-core:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-core</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-expression</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-expression:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-expression:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-expression</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-jcl</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-jcl:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-jcl:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-jcl</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-jdbc</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-jdbc:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-jdbc:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-jdbc</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-orm</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-orm:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-orm:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-orm</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-oxm</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-oxm:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-oxm:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-oxm</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-tx</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-tx:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-tx:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-tx</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-web</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-web:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-web:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-web</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-webmvc</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">maven</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-webmvc:6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">org.springframework:spring-webmvc:6.2.6</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">gav://org.springframework:spring-webmvc</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.1</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">6.2.6</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">org.terracotta:offheap-store</p></td>
@@ -4476,30 +4472,30 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-api-1.9.0.20250415T132527Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-api-1.10.0.20250707T145406Z.jar</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">generic</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-api-1.9.0.20250415T132527Z.jar</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:ad644df5ba78f0fc2dca49ec71538b85aa4bd6da6f1c11067dbac02f4a5f9e5d/trustbroker-api-1.9.0.20250415T132527Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-api-1.10.0.20250707T145406Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:4663ca3599ab19632398f53d87a9604a7a31bbef834c0d2116e96fe856e76655/trustbroker-api-1.10.0.20250707T145406Z.jar</p></td>
 <td class="tableblock halign-left valign-top"></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-common-1.9.0.20250415T132527Z.jar</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">AGPL-3.0,Apache-2.0,BSD-3-Clause</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/agpl.txt,http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://www.gnu.org/licenses/agpl.txt,http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-common-1.10.0.20250707T145406Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0,BSD-3-Clause</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause" class="bare">http://licenses.nuget.org/Apache-2.0,http://opensource.org/licenses/BSD-3-Clause</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">generic</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-common-1.9.0.20250415T132527Z.jar</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:9fcd406ff62475d658b6c658c9ff806b1a0339e57eada1e85da95dc0e11f8f54/trustbroker-common-1.9.0.20250415T132527Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-common-1.10.0.20250707T145406Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:1ec81627c883c9b1fbd83f2b02ca5dc877edc6efa14c1ca82f3d0108ba95329a/trustbroker-common-1.10.0.20250707T145406Z.jar</p></td>
 <td class="tableblock halign-left valign-top"></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-service-1.9.0.20250415T132527Z.jar</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">AGPL-3.0,Apache-2.0</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://www.gnu.org/licenses/agpl.txt,http://licenses.nuget.org/Apache-2.0" class="bare">http://www.gnu.org/licenses/agpl.txt,http://licenses.nuget.org/Apache-2.0</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-service-1.10.0.20250707T145406Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Apache-2.0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="http://licenses.nuget.org/Apache-2.0" class="bare">http://licenses.nuget.org/Apache-2.0</a></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">generic</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-service-1.9.0.20250415T132527Z.jar</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:7f115488dac96ed23da427dc22c99cd06956ebe77c41a38f5bfa7cd1d12784ed/trustbroker-service-1.9.0.20250415T132527Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-service-1.10.0.20250707T145406Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:63e256cc2012721090f96bb8fe07faa28b8ee243ad3032effda5f29acba58cfb/trustbroker-service-1.10.0.20250707T145406Z.jar</p></td>
 <td class="tableblock halign-left valign-top"></td>
 </tr>
 <tr>
@@ -4507,17 +4503,17 @@ Migration use case only. We prefer you package this with your client ao we can r
 <td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">docker</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-swiss/trustbroker-application:1.9.0.20250415T132527Z</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-swiss/trustbroker-application:1.10.0.20250707T145406Z</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">docker://trustbroker-swiss/trustbroker-application</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">1.9.0.20250415T132527Z</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">1.10.0.20250707T145406Z</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-wstrust-service-1.9.0.20250415T132527Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-wstrust-service-1.10.0.20250707T145406Z.jar</p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Unknown</p></td>
 <td class="tableblock halign-left valign-top"></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">generic</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-wstrust-service-1.9.0.20250415T132527Z.jar</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:17b2b294e378a06018155eed4572a4e0ce26c04577bf9d637399b46e6d1233f3/trustbroker-wstrust-service-1.9.0.20250415T132527Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">trustbroker-wstrust-service-1.10.0.20250707T145406Z.jar</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">generic://sha256:61159943d1dab61dd5ef55ef897725153a6558c22044e5acc8888644cace70ec/trustbroker-wstrust-service-1.10.0.20250707T145406Z.jar</p></td>
 <td class="tableblock halign-left valign-top"></td>
 </tr>
 </tbody>
@@ -4528,8 +4524,8 @@ Migration use case only. We prefer you package this with your client ao we can r
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.9.0.20250415T132527Z<br>
-Last updated 2024-08-08 16:44:14 +0200
+Version 1.10.0.20250707T160051Z<br>
+Last updated 2025-02-18 15:45:03 +0100
 </div>
 </div>
 </body>

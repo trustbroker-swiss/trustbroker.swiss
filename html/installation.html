@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Docker Installation</h1>
 <div class="details">
-<span id="revnumber">version 1.9.0.20250415T132527Z</span>
+<span id="revnumber">version 1.10.0.20250707T160051Z</span>
 </div>
 </div>
 <div id="content">
@@ -686,8 +686,7 @@ export UID GID</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Example docker compose depending on the vault (see ${VAR} references) that you might want to tweak towards using external
-sessiondb and/or git repository server:</p>
+<p>Example docker compose depending on the vault (see ${VAR} references) that you might want to tweak towards using external sessiondb and/or git repository server:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -733,13 +732,32 @@ services:
     networks:
       - trustbroker-network
 
+  ldap:
+    container_name: ldap
+    image: bitnami/openldap
+    ports:
+      - '1389:1389'
+      - '1636:1636'
+    environment:
+      #- BITNAMI_DEBUG=true
+      - LDAP_ROOT=dc=trustbroker,dc=swiss
+      - LDAP_ADMIN_USERNAME=admin
+      - LDAP_ADMIN_PASSWORD=secret
+      - LDAP_CUSTOM_SCHEMA_DIR=/schema_init
+      - LDAP_CUSTOM_LDIF_DIR=/ldif_init
+    volumes:
+      - ./ldap_init/schema:/schema_init:ro
+      - ./ldap_init/ldif:/ldif_init:ro
+      #- openldap_data:/bitnami/openldap
+
   trustbroker:
     container_name: trustbroker
     image: ghcr.io/trustbroker-swiss/trustbroker-application:latest
     user: "${UID}:${GID}"
     depends_on:
-      - mariadb
       - gitea
+      - mariadb
+      - ldap
     volumes:
       - ./ssh:/etc/trustbroker/keys:ro
       - /etc/localtime:/etc/localtime:ro
@@ -764,6 +782,8 @@ services:
       #- HTTPS_PROXY=http://proxy.company.com:1234
       #- SSH_PROXY_HOST=proxy.company.com
       #- SSH_PROXY_PORT=1234
+      # When running on HTTP relax cookie polices
+      - TRUSTBROKER_CONFIG_SECUREBROWSERHEADERS=false
     networks:
       - trustbroker-network
 
@@ -839,8 +859,7 @@ cat ${SSH_KEY_FILE}.pub</code></pre>
 <h2 id="_setup_gitea_server">Setup Gitea Server</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>For trials, you can use the Gitea server as shown in the docker-compose setup, you need to switch from the github to the gitea
-URL for the xtb-gitops-demo repository..</p>
+<p>For trials, you can use the Gitea server as shown in the docker-compose setup, you need to switch from the github to the gitea URL for the xtb-gitops-demo repository..</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -859,13 +878,13 @@ URL for the xtb-gitops-demo repository..</p>
 <p>Register user <code>trustbroker-swiss</code> and login.</p>
 </li>
 <li>
-<p>Add content of <code>ssh/id_rsa.pub</code> (and/or your own) to: User &gt;&gt; Settings &gt;&gt; SSH/PGP Keys &gt;&gt;  Manage SSH Keys &gt;&gt; Add Key</p>
+<p>Add content of <code>ssh/id_rsa.pub</code> (and/or your own) to: User &gt;&gt; Settings &gt;&gt; SSH/PGP Keys &gt;&gt; Manage SSH Keys &gt;&gt; Add Key</p>
 </li>
 <li>
 <p>Create a repository <code>xtb-gitops-demo</code>.</p>
 </li>
 <li>
-<p>Optional: For http access: User &gt;&gt; Settings &gt;&gt; Applications &gt;&gt;  Manage Access Tokens &gt;&gt; Generate Token</p>
+<p>Optional: For http access: User &gt;&gt; Settings &gt;&gt; Applications &gt;&gt; Manage Access Tokens &gt;&gt; Generate Token</p>
 </li>
 </ul>
 </div>
@@ -949,8 +968,8 @@ docker compose up
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.9.0.20250415T132527Z<br>
-Last updated 2025-05-06 11:40:46 +0200
+Version 1.10.0.20250707T160051Z<br>
+Last updated 2025-07-07 14:35:28 +0200
 </div>
 </div>
 </body>

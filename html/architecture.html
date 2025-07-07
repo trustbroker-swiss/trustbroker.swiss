@@ -438,7 +438,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="header">
 <h1>Architecture</h1>
 <div class="details">
-<span id="revnumber">version 1.9.0.20250415T132527Z</span>
+<span id="revnumber">version 1.10.0.20250707T160051Z</span>
 </div>
 </div>
 <div id="content">
@@ -450,16 +450,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="ulist">
 <ul>
 <li>
-<p>routing authentication requests between relying parties (in short RP, also known as service provider / SP) and claims providers
-(CP also known as identity provider / IDP) allowing a user to select the home realm or computationally doing
-home realm discovery (HRD) via scripting</p>
+<p>routing authentication requests between relying parties (in short RP, also known as service provider / SP) and claims providers (CP also known as identity provider / IDP) allowing a user to select the home realm or computationally doing home realm discovery (HRD) via scripting</p>
 </li>
 <li>
 <p>mapping claims/attributes between CP and RP (like authentication context classes, SAML attributes and OIDC claims)</p>
 </li>
 <li>
-<p>backing logins with a single-sign-on session store to prevent logins for participating RPs when Quality of Authentication
-(QoA) is sufficient provided by the same CP</p>
+<p>backing logins with a single-sign-on session store to prevent logins for participating RPs when Quality of Authentication (QoA) is sufficient provided by the same CP</p>
 </li>
 <li>
 <p>auditing login events as a central party</p>
@@ -475,12 +472,10 @@ home realm discovery (HRD) via scripting</p>
 <div class="ulist">
 <ul>
 <li>
-<p>SAML 2.0 on RP and CP side (SAML POST and redirect binding, artifact binding having higher integration effort and more
-complex operational impact can be used too)</p>
+<p>SAML 2.0 on RP and CP side (SAML POST and redirect binding, artifact binding having higher integration effort and more complex operational impact can be used too)</p>
 </li>
 <li>
-<p>OIDC 1.0 on RP side focussing on the best practice sub-set (authorization code flow with PKCE for frontend and with client
-authentication for backends)</p>
+<p>OIDC 1.0 on RP side focussing on the best practice sub-set (authorization code flow with PKCE for frontend and with client authentication for backends)</p>
 </li>
 </ul>
 </div>
@@ -518,9 +513,13 @@ in the browser using JavaScript or in a backend.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">OIDC Service</p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Handles the OIDC authorization code flow based on the
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles RP-initiated OIDC authorization code flow based on the
 <a href="https://docs.spring.io/spring-authorization-server/reference/overview.html#feature-list">Spring Authorization Server</a>
 To separate SAML and OIDC implementation sub-systems, the OIDC service is federated via SAML.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Authorization Code Flow Service</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Handles OIDC authorization code flow towards OIDC CPs.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock">HRD Controller</p></td>
@@ -549,7 +548,7 @@ applied using this service.</p></td>
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="sequence-diagram.svg" alt="sequence diagram" width="1635" height="1591">
+<img src="sequence-diagram.svg" alt="sequence diagram" width="1857" height="1942">
 </div>
 <div class="title">Figure 1. Sequence diagram: Federation processing</div>
 </div>
@@ -558,8 +557,8 @@ applied using this service.</p></td>
 </div>
 <div id="footer">
 <div id="footer-text">
-Version 1.9.0.20250415T132527Z<br>
-Last updated 2025-05-06 11:40:46 +0200
+Version 1.10.0.20250707T160051Z<br>
+Last updated 2025-07-07 14:35:28 +0200
 </div>
 </div>
 </body>
